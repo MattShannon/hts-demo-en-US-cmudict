@@ -1,6 +1,6 @@
 # Process this file with autoconf to produce a configure script.
-AC_INIT(HTS-demo_CMU-ARCTIC-SLT,2.1,hts-users@sp.nitech.ac.jp)
-AC_COPYRIGHT(Copyright 2001-2008 Nagoya Institute of Technology)
+AC_INIT(HTS-demo_CMU-ARCTIC-SLT_STRAIGHT,2.1.1,hts-users@sp.nitech.ac.jp)
+AC_COPYRIGHT(Copyright 2001-2010 Nagoya Institute of Technology)
 AC_COPYRIGHT(Copyright 2001-2008 Tokyo Institute of Technology)
 
 
@@ -102,9 +102,21 @@ if test ! -f "$LPC2LSP"; then
 fi
 version=`$LPC2LSP -h 2>&1 | grep "version" | sed -e "s/.* //g"`
 if test -z "$version"; then
-	AC_MSG_ERROR(lpc2lsp in SPTK version 3.1 or later is required.)
-elif test `echo "$version < 3.1" | $BC` = 1; then
-	AC_MSG_ERROR(lpc2lsp in SPTK version 3.1 or later is required.)
+	AC_MSG_ERROR(lpc2lsp in SPTK version 3.2 or later is required.)
+elif test `echo "$version < 3.2" | $BC` = 1; then
+	AC_MSG_ERROR(lpc2lsp in SPTK version 3.2 or later is required.)
+fi
+
+# nan
+AC_PATH_PROG([NAN], [nan], [:], [${sptk_search_path}:$PATH])
+if test ! -f "$NAN"; then
+	AC_MSG_ERROR(Can't find nan of SPTK)
+fi
+
+# bcut
+AC_PATH_PROG([BCUT], [bcut], [:], [${sptk_search_path}:$PATH])
+if test ! -f "$BCUT"; then
+	AC_MSG_ERROR(Can't find bcut of SPTK)
 fi
 
 # vstat
@@ -156,9 +168,9 @@ if test ! -f "$MERGE"; then
 fi
 version=`$MERGE -h 2>&1 | grep "version" | sed -e "s/.* //g"`
 if test -z "$version"; then
-	AC_MSG_ERROR(merge in SPTK version 3.1 or later is required.)
-elif test `echo "$version < 3.1" | $BC` = 1; then
-	AC_MSG_ERROR(merge in SPTK version 3.1 or later is required.)
+	AC_MSG_ERROR(merge in SPTK version 3.2 or later is required.)
+elif test `echo "$version < 3.2" | $BC` = 1; then
+	AC_MSG_ERROR(merge in SPTK version 3.2 or later is required.)
 fi
 
 # average
@@ -168,9 +180,9 @@ if test ! -f "$AVERAGE"; then
 fi
 version=`$AVERAGE -h 2>&1 | grep "version" | sed -e "s/.* //g"`
 if test -z "$version"; then
-	AC_MSG_ERROR(average in SPTK version 3.1 or later is required.)
-elif test `echo "$version < 3.1" | $BC` = 1; then
-	AC_MSG_ERROR(average in SPTK version 3.1 or later is required.)
+	AC_MSG_ERROR(average in SPTK version 3.2 or later is required.)
+elif test `echo "$version < 3.2" | $BC` = 1; then
+	AC_MSG_ERROR(average in SPTK version 3.2 or later is required.)
 fi
 
 # bcp
@@ -186,9 +198,9 @@ if test ! -f "$LSP2LPC"; then
 fi
 version=`$LSP2LPC -h 2>&1 | grep "version" | sed -e "s/.* //g"`
 if test -z "$version"; then
-	AC_MSG_ERROR(lsp2lpc in SPTK version 3.1 or later is required.)
-elif test `echo "$version < 3.1" | $BC` = 1; then
-	AC_MSG_ERROR(lsp2lpc in SPTK version 3.1 or later is required.)
+	AC_MSG_ERROR(lsp2lpc in SPTK version 3.2 or later is required.)
+elif test `echo "$version < 3.2" | $BC` = 1; then
+	AC_MSG_ERROR(lsp2lpc in SPTK version 3.2 or later is required.)
 fi
 
 # lspcheck
@@ -221,12 +233,6 @@ if test ! -f "$DFS"; then
 	AC_MSG_ERROR(Can't find dfs of SPTK)
 fi
 
-# nan
-AC_PATH_PROG([NAN], [nan], [:], [${sptk_search_path}:$PATH])
-if test ! -f "$NAN"; then
-	AC_MSG_ERROR(Can't find nan of SPTK)
-fi
-
 
 
 # sox (Sound eXchange)
@@ -239,6 +245,49 @@ AC_ARG_WITH(sox-search-path,
 AC_PATH_PROG([SOX], [sox], [:], [${sox_search_path}:$PATH])
 if test ! -f "$SOX"; then
 	AC_MSG_ERROR(Can't find sox)
+fi
+
+# sox option
+sox -h > sox.option 2>&1
+soxversion=`head -1 sox.option | awk '{printf "%d\n",$NF}'`
+if test $soxversion -gt 13; then
+	SOXOPTION=2
+else
+	SOXOPTION=w
+fi
+rm -f sox.option
+AC_SUBST(SOXOPTION)
+
+
+
+# OpenFst
+# OpenFst search path
+AC_ARG_WITH(openfst-search-path,
+		AS_HELP_STRING([--with-openfst-search-path],[specify the additional OpenFst search path]),
+		[openfst_search_path=$withval])
+
+# fstcompile
+AC_PATH_PROG([FSTCOMPILE], [fstcompile], [:], [${openfst_search_path}:$PATH])
+if test ! -f "$FSTCOMPILE"; then
+	AC_MSG_ERROR(Can't find fstcompile)
+fi
+
+# fstcompose
+AC_PATH_PROG([FSTCOMPOSE], [fstcompose], [:], [${openfst_search_path}:$PATH])
+if test ! -f "$FSTCOMPOSE"; then
+	AC_MSG_ERROR(Can't find fstcompose)
+fi
+
+# fstshortestpath
+AC_PATH_PROG([FSTSHORTESTPATH], [fstshortestpath], [:], [${openfst_search_path}:$PATH])
+if test ! -f "$FSTSHORTESTPATH"; then
+	AC_MSG_ERROR(Can't find fstshortestpath)
+fi
+
+# fstprint
+AC_PATH_PROG([FSTPRINT], [fstprint], [:], [${openfst_search_path}:$PATH])
+if test ! -f "$FSTPRINT"; then
+	AC_MSG_ERROR(Can't find fstprint)
 fi
 
 
@@ -317,6 +366,12 @@ if test ! -f "$HHED"; then
 	AC_MSG_ERROR(Can't find HHEd of HTS)
 fi
 
+# HFst
+AC_PATH_PROG([HFST],   [HFst],   [:], [${hts_search_path}:$PATH])
+if test ! -f "$HFST"; then
+	AC_MSG_ERROR(Can't find HFst of HTS)
+fi
+
 
 
 # hts_engine API
@@ -389,11 +444,10 @@ AC_SUBST(PWD)
 AC_ARG_VAR([FRAMESHIFT],[Frame shift in point (default=80)])
 AC_ARG_VAR([FREQWARP],[Frequency warping factor (default=0.42)])
 AC_ARG_VAR([GAMMA],[Pole/Zero weight factor (0: mel-cepstral analysis  1: LPC analysis  2,3,...,N: mel-generalized cepstral (MGC) analysis) (default=0)])
-AC_ARG_VAR([MGCLSP],[Use MGC-LSPs instead of MGC coefficients (default=0)])
 AC_ARG_VAR([MGCORDER],[Order of MGC analysis (default=39)])
 AC_ARG_VAR([LNGAIN],[Use logarithmic gain instead of linear gain (default=0)])
-AC_ARG_VAR([LOWERF0],[Lower limit for F0 extraction in Hz (default=80)])
-AC_ARG_VAR([UPPERF0],[Upper limit for F0 extraction in Hz (default=350)])
+AC_ARG_VAR([LOWERF0],[Lower limit for F0 extraction in Hz (default=110)])
+AC_ARG_VAR([UPPERF0],[Upper limit for F0 extraction in Hz (default=280)])
 AC_ARG_VAR([PSTFILTER],[Postfiltering factor (default=1.4)])
 AC_ARG_VAR([IMPLEN],[Length of impulse response (default=4096)])
 AC_ARG_VAR([SAMPFREQ],[Sampling frequency in Hz (default=16000)])
@@ -414,16 +468,15 @@ if test -z "$FREQWARP"; then
 		12000) FREQWARP=0.37 ;;
 		16000) FREQWARP=0.42 ;;
 		22050) FREQWARP=0.45 ;;
-		*)     FREQWARP=0.50 ;;
+		32000) FREQWARP=0.45 ;;
+		44100) FREQWARP=0.53 ;;
+		48000) FREQWARP=0.55 ;;
+		*)     FREQWARP=0.00 ;;
 	esac
 fi
 
 if test -z "$GAMMA"; then
 	GAMMA=0
-fi
-
-if test -z "$MGCLSP"; then
-	MGCLSP=0
 fi
 
 if test -z "$MGCORDER"; then
@@ -435,11 +488,11 @@ if test -z "$LNGAIN"; then
 fi
 
 if test -z "$LOWERF0"; then
-	LOWERF0=80
+	LOWERF0=110
 fi 
 
 if test -z "$UPPERF0"; then
-	UPPERF0=350
+	UPPERF0=280
 fi 
 
 if test -z "$PSTFILTER"; then
@@ -452,12 +505,8 @@ fi
 
 MGCVSIZE=`expr $MGCORDER + 1`
 
-if test $GAMMA -eq 0 -a $MGCLSP -eq 1; then
-	AC_MSG_ERROR(Cannot convert MGC coefficients into LSP form if GAMMA=0!)
-fi
-
-if test $GAMMA -ne 0 -a $MGCLSP -eq 0; then
-	AC_MSG_ERROR(Cannot use MGC coefficients directly if GAMMA>0!  Convert into the LSP form by setting MGCLSP=1!)
+if test $GAMMA -lt 0; then
+	AC_MSG_ERROR(Cannot use MGC coefficients if GAMMA<0!)
 fi
 
 
@@ -467,7 +516,6 @@ AC_SUBST(FRAMESHIFT)
 AC_SUBST(FREQWARP)
 AC_SUBST(GAMMA)
 AC_SUBST(MGCORDER)
-AC_SUBST(MGCLSP)
 AC_SUBST(LOWERF0)
 AC_SUBST(UPPERF0)
 AC_SUBST(PSTFILTER)
@@ -517,9 +565,10 @@ AC_ARG_VAR([MAXDEV],[maximum duration scaling factor (default=10)])
 AC_ARG_VAR([MINDUR],[minimum duration to be evaluated (default=5)])
 AC_ARG_VAR([NMGCTRANSBLK],[number of blocks for MGC transforms (default=3)])
 AC_ARG_VAR([NLF0TRANSBLK],[number of blocks for log F0 transforms (default=1)])
-AC_ARG_VAR([NBAPTRANSBLK],[number of blocks for band aperiodicity transforms (default=5)])
-AC_ARG_VAR([MGCBANDWIDTH],[band width for MGC transforms (default=24 for cepstral form, derault=2 for LSP form)])
-AC_ARG_VAR([LF0BANDWIDTH],[band width for log F0 transforms (default=1)])
+AC_ARG_VAR([NBAPTRANSBLK],[number of blocks for band aperiodicity transforms (default=3)])
+AC_ARG_VAR([MGCBANDWIDTH],[band width for MGC transforms (default=39 for cepstral form, derault=2 for LSP form)])
+AC_ARG_VAR([LF0BANDWIDTH],[band width for log F0 transforms (default=0)])
+AC_ARG_VAR([BAPBANDWIDTH],[band width for band aperiodicity transforms (default=5)])
 
 # default values
 if test -z "$NSTATE"; then
@@ -555,7 +604,7 @@ if test -z "$NBAPTRANSBLK"; then
 fi
 
 if test -z "$MGCBANDWIDTH"; then
-	if test $MGCLSP -eq 0; then
+	if test $GAMMA -eq 0; then
 		MGCBANDWIDTH=$MGCORDER
 	else
 		MGCBANDWIDTH=2
@@ -598,6 +647,8 @@ AC_ARG_VAR([STEPDEC],[step size deceleration factor (default=0.5)])
 AC_ARG_VAR([HMMWEIGHT],[weight for HMM output prob. (default=1.0)])
 AC_ARG_VAR([GVWEIGHT],[weight for GV output prob. (default=1.0)])
 AC_ARG_VAR([OPTKIND],[optimization method (STEEPEST, NEWTON, or LBFGS) (default=NEWTON)])
+AC_ARG_VAR([NOSILGV],[turn on GV without silent and pause phoneme (0:off or 1:on, default=1)])
+AC_ARG_VAR([CDGV],[turn on context-dependent GV (0:off or 1:on, default=1)])
 
 # default values
 if test -z "$MAXEMITER"; then
@@ -648,6 +699,14 @@ if test -z "$OPTKIND"; then
 	OPTKIND=NEWTON
 fi
 
+if test -z "$NOSILGV"; then
+	NOSILGV=1
+fi
+
+if test -z "$CDGV"; then
+	CDGV=1
+fi
+
 # substitute variables
 AC_SUBST(MAXEMITER)
 AC_SUBST(EMEPSILON)
@@ -661,9 +720,10 @@ AC_SUBST(STEPDEC)
 AC_SUBST(HMMWEIGHT)
 AC_SUBST(GVWEIGHT)
 AC_SUBST(OPTKIND)
+AC_SUBST(NOSILGV)
+AC_SUBST(CDGV)
 
 
 
 # output data/Makefile and scripts/Config.pm
 AC_OUTPUT(data/Makefile scripts/Config.pm Makefile)
-

@@ -35,12 +35,18 @@ Modifications from the official version
 This repository contains some minor modifications from the official version of the
 US English STRAIGHT-based `HTS demo <http://hts.sp.nitech.ac.jp/?Download>`_:
 
+- it does not include a corpus of text data and speech data for training the
+  synthesis system.
+  The corpus of data used by the official version is based on the
+  `CMU ARCTIC corpus for speaker SLT <http://festvox.org/cmu_arctic/dbs_slt.html>`_
+  and may obtained by downloading the official version of the
+  US English STRAIGHT-based HTS demo from the
+  `HTS demo website <http://hts.sp.nitech.ac.jp/?Download>`_.
 - it adds this README file
 - it adds the ``License`` file
 - it removes the ``configure`` script since a suitable script can be automatically
   generated from the provided ``configure.ac`` file using ``autoconf``.
   This follows standard version control practices.
-- it removes ``scripts/.cvsignore`` and ``data/.cvsignore``
 
 License
 -------
@@ -65,6 +71,7 @@ hts-demo-straight-en-US-cmudict depends on the following software packages:
 - `HMM-based Speech Synthesis System (HTS) <http://hts.sp.nitech.ac.jp/>`_
 - `hts_engine API <http://hts-engine.sourceforge.net/>`_
   (if synthesis using HTS engine rather than HTS's HMGenS tool is desired)
+- `OpenFst <http://www.openfst.org/>`_
 - `STRAIGHT vocoder <http://www.wakayama-u.ac.jp/~kawahara/STRAIGHTadv/index_e.html>`_
 - `MATLAB <http://www.mathworks.com/products/matlab/>`_
   (to run the STRAIGHT vocoder)
@@ -73,6 +80,10 @@ The versions of these software packages required can be found in ``INSTALL``.
 
 To set-up this directory:
 
+- add appropriate Festival utterance files in ``data/utts`` and appropriate raw
+  audio files in ``data/raw`` for the corpus you wish to use during training
+  (see above for details of the formats used and details of where to obtain the
+  processed CMU ARCTIC corpus typically used with this HTS demo)
 - generate the ``configure`` script from ``configure.ac`` using ``autoconf``
 - follow the instructions for the official version included in ``INSTALL``.
   If you are using a corpus other than the CMU ARCTIC corpus for speaker SLT,

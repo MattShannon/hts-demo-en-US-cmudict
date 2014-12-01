@@ -5,7 +5,7 @@
 #           http://hts.sp.nitech.ac.jp/                             #
 # ----------------------------------------------------------------- #
 #                                                                   #
-#  Copyright (c) 2001-2008  Nagoya Institute of Technology          #
+#  Copyright (c) 2001-2010  Nagoya Institute of Technology          #
 #                           Department of Computer Science          #
 #                                                                   #
 #                2001-2008  Tokyo Institute of Technology           #
@@ -56,77 +56,91 @@ $ver  = '@VER@';
 $ref{'cmp'} = \@cmp;
 $ref{'dur'} = \@dur;
 
-%vflr = ('mgc' => '0.01', # variance floors
+%vflr = ('mgc' => '0.01',           # variance floors
          'lf0' => '0.01',
          'bap' => '0.01',
          'dur' => '0.01');
 
-%thr  = ('mgc' => '000',  # minimum state occupancy 
+%thr  = ('mgc' => '000',            # minimum likelihood gain in clustering
          'lf0' => '000',
          'bap' => '000',
          'dur' => '000');
 
-%mdlf = ('mgc' => '1.0',  # tree size control param. for MDL
+%mdlf = ('mgc' => '1.0',            # tree size control param. for MDL
          'lf0' => '1.0',
          'bap' => '1.0',
          'dur' => '1.0');
 
-%mocc = ('mgc' => '10.0',  # minimum occupancy counts
+%mocc = ('mgc' => '10.0',           # minimum occupancy counts
          'lf0' => '10.0',
          'bap' => '10.0',
          'dur' => ' 5.0');
 
-%gam  = ('mgc' => '000',  # stats load threshold
+%gam  = ('mgc' => '000',            # stats load threshold
          'lf0' => '000',
          'bap' => '000',
          'dur' => '000');
 
-%t2s  = ('mgc' => 'cmp',  # feature type to mmf conversion
+%t2s  = ('mgc' => 'cmp',            # feature type to mmf conversion
          'lf0' => 'cmp',
          'bap' => 'cmp',
          'dur' => 'dur');
 
-%strb = ('mgc' => '1',  # stream start
+%strb = ('mgc' => '1',              # stream start
          'lf0' => '2',
          'bap' => '@BAPSTREN@',
          'dur' => '1');
 
-%stre = ('mgc' => '1',  # stream end
+%stre = ('mgc' => '1',              # stream end
          'lf0' => '@F0STREN@',
          'bap' => '@BAPSTREN@',
          'dur' => '@NSTATE@');
 
-%msdi = ('mgc' => '0',  # msd information
+%msdi = ('mgc' => '0',              # msd information
          'lf0' => '1',
          'bap' => '0',
          'dur' => '0');
 
-%strw = ('mgc' => '1.0',  # stream weights
+%strw = ('mgc' => '1.0',            # stream weights
          'lf0' => '1.0',
          'bap' => '0.0',
          'dur' => '1.0');
 
-%ordr = ('mgc' => '@MGCVSIZE@',  # feature order  
+%ordr = ('mgc' => '@MGCVSIZE@',     # feature order
          'lf0' => '1',
          'bap' => '5',
          'dur' => '@NSTATE@');
 
-%nwin = ('mgc' => '@NMGCWIN@',  # number of windows
+%nwin = ('mgc' => '@NMGCWIN@',      # number of windows
          'lf0' => '@NLF0WIN@',
          'bap' => '@NBAPWIN@',
          'dur' => '0');
 
-%nblk = ('mgc' => '@NMGCTRANSBLK@',   # number of blocks for transforms
+%nblk = ('mgc' => '@NMGCTRANSBLK@', # number of blocks for transforms
          'lf0' => '@NLF0TRANSBLK@',
          'bap' => '@NBAPTRANSBLK@',
          'dur' => '1');
 
-%band = ('mgc' => '@MGCBANDWIDTH@',   # band width for transforms
+%band = ('mgc' => '@MGCBANDWIDTH@', # band width for transforms
          'lf0' => '@LF0BANDWIDTH@',
          'bap' => '@BAPBANDWIDTH@',
          'dur' => '0');
 
-#%mdcp = ('dy' => 'd',   # model copy
+%gvthr  = ('mgc' => '000',          # minimum likelihood gain in clustering for GV
+           'lf0' => '000',
+           'bap' => '000');
+
+%gvmdlf = ('mgc' => '1.0',          # tree size control for GV
+           'lf0' => '1.0',
+           'bap' => '1.0');
+
+%gvgam  = ('mgc' => '000',          # stats load threshold for GV
+           'lf0' => '000',
+           'bap' => '000');
+
+@slnt = ('pau','h#','brth');        # silent and pause phoneme
+
+#%mdcp = ('dy' => 'd',              # model copy
 #         'A'  => 'a',
 #         'I'  => 'i',
 #         'U'  => 'u',
@@ -137,47 +151,51 @@ $ref{'dur'} = \@dur;
 # Speech Analysis/Synthesis Setting ==============
 # speech analysis
 $sr = @SAMPFREQ@;   # sampling rate (Hz)
-$fs = @FRAMESHIFT@;      # frame period (point) 
-$fw = @FREQWARP@;    # frequency warping
-$gm = @GAMMA@;   # pole/zero representation weight
-$ul = @MGCLSP@;   # use MGC-LSPs instead of MGC coefficients
-$lg = @LNGAIN@;   # use log gain instead of linear gain
+$fs = @FRAMESHIFT@; # frame period (point)
+$fw = @FREQWARP@;   # frequency warping
+$gm = @GAMMA@;      # pole/zero representation weight
+$lg = @LNGAIN@;     # use log gain instead of linear gain
 $bs = @BYTESWAP@;   # 1: big endian, 0: little endian
-$fr = $fs/$sr; # frame period (sec)
+$fr = $fs/$sr;      # frame period (sec)
 
 # speech synthesis
-$pf = @PSTFILTER@;     # postfiltering factor
+$pf = @PSTFILTER@; # postfiltering factor
 $fl = @IMPLEN@;    # length of impulse response
-$co = 2047;    # order of cepstrum to approximate mel-generalized cepstrum
+$co = 2047;        # order of cepstrum to approximate mel-generalized cepstrum
 
 
 # Modeling/Generation Setting ==============
 # modeling
-$nState = @NSTATE@;                # number of states
-$nIte   = @NITER@;                # number of iterations for embedded training 
-$beam   = '1500 100 5000';  # initial, inc, and upper limit of beam width
-$maxdev = @MAXDEV@;                # max standard dev coef to control HSMM maximum duration
-$mindur = @MINDUR@;                # min state duration to be evaluated  
-$wf     = @WFLOOR@;                # mixture weight flooring
+$nState = @NSTATE@;        # number of states
+$nIte   = @NITER@;         # number of iterations for embedded training
+$beam   = '1500 100 5000'; # initial, inc, and upper limit of beam width
+$maxdev = @MAXDEV@;        # max standard dev coef to control HSMM maximum duration
+$mindur = @MINDUR@;        # min state duration to be evaluated
+$wf     = @WFLOOR@;        # mixture weight flooring
 
 # generation
-$maxEMiter  = @MAXEMITER@;      # max EM iteration
+$maxEMiter  = @MAXEMITER@;  # max EM iteration
 $EMepsilon  = @EMEPSILON@;  # convergence factor for EM iteration
-$useGV      = @USEGV@;       # turn on GV
-$maxGViter  = @MAXGVITER@;      # max GV iteration
+$useGV      = @USEGV@;      # turn on GV
+$maxGViter  = @MAXGVITER@;  # max GV iteration
 $GVepsilon  = @GVEPSILON@;  # convergence factor for GV iteration
-$minEucNorm = @MINEUCNORM@;    # minimum Euclid norm for GV iteration 
-$stepInit   = @STEPINIT@;     # initial step size
-$stepInc    = @STEPINC@;     # step size acceleration factor
-$stepDec    = @STEPDEC@;     # step size deceleration factor
-$hmmWeight  = @HMMWEIGHT@;     # weight for HMM output prob.
-$gvWeight   = @GVWEIGHT@;     # weight for GV output prob.
-$optKind    = '@OPTKIND@'; # optimization method (STEEPEST, NEWTON, or LBFGS)
+$minEucNorm = @MINEUCNORM@; # minimum Euclid norm for GV iteration
+$stepInit   = @STEPINIT@;   # initial step size
+$stepInc    = @STEPINC@;    # step size acceleration factor
+$stepDec    = @STEPDEC@;    # step size deceleration factor
+$hmmWeight  = @HMMWEIGHT@;  # weight for HMM output prob.
+$gvWeight   = @GVWEIGHT@;   # weight for GV output prob.
+$optKind    = '@OPTKIND@';  # optimization method (STEEPEST, NEWTON, or LBFGS)
+$nosilgv    = @NOSILGV@;    # GV without silent and pause phoneme
+$cdgv       = @CDGV@;       # context-dependent GV
 
 
 # Directories & Commands ===============
 # project directories
 $prjdir = '@PWD@';
+
+# Perl
+$PERL = '@PERL@';
 
 # HTS commands
 $HCOMPV = '@HCOMPV@';
@@ -185,28 +203,39 @@ $HINIT  = '@HINIT@';
 $HREST  = '@HREST@';
 $HEREST = '@HEREST@';
 $HHED   = '@HHED@';
+$HFST   = '@HFST@';
 $HMGENS = '@HMGENS@';
 $ENGINE = '@ENGINE@';
 
 # SPTK commands
-$X2X         = '@X2X@';
-$FREQT       = '@FREQT@';
-$C2ACR       = '@C2ACR@';
-$VOPR        = '@VOPR@';
-$MC2B        = '@MC2B@';
-$SOPR        = '@SOPR@';
-$B2MC        = '@B2MC@';
-$LSP2LPC     = '@LSP2LPC@';
-$MGC2MGC     = '@MGC2MGC@';
-$MERGE       = '@MERGE@';
-$BCP         = '@BCP@';
-$LSPCHECK    = '@LSPCHECK@';
+$X2X      = '@X2X@';
+$FREQT    = '@FREQT@';
+$C2ACR    = '@C2ACR@';
+$VOPR     = '@VOPR@';
+$MC2B     = '@MC2B@';
+$SOPR     = '@SOPR@';
+$B2MC     = '@B2MC@';
+$LSP2LPC  = '@LSP2LPC@';
+$MGC2MGC  = '@MGC2MGC@';
+$MERGE    = '@MERGE@';
+$BCP      = '@BCP@';
+$LSPCHECK = '@LSPCHECK@';
 $MGC2SP      = '@MGC2SP@';
 $INTERPOLATE = '@INTERPOLATE@';
 $DFS         = '@DFS@';
+$BCUT     = '@BCUT@';
+$VSTAT    = '@VSTAT@';
+$NAN      = '@NAN@';
 
 # SoX (to add RIFF header)
-$SOX = '@SOX@';
+$SOX       = '@SOX@';
+$SOXOPTION = '@SOXOPTION@';
+
+# OpenFst commands
+$FSTCOMPILE      = '@FSTCOMPILE@';
+$FSTCOMPOSE      = '@FSTCOMPOSE@';
+$FSTSHORTESTPATH = '@FSTSHORTESTPATH@';
+$FSTPRINT        = '@FSTPRINT@';
 
 # MATLAB & STRAIGHT
 $MATLAB   = '@MATLAB@';
@@ -214,32 +243,35 @@ $STRAIGHT = '@STRAIGHT@';
 
 
 # Switch ================================
-$MKEMV = 1;  # preparing environments
-$HCMPV = 1;  # computing a global variance
-$IN_RE = 1;  # initialization & reestimation
-$MMMMF = 1;  # making a monophone mmf
-$ERST0 = 1;  # embedded reestimation (monophone)
-$MN2FL = 1;  # copying monophone mmf to fullcontext one
-$ERST1 = 1;  # embedded reestimation (fullcontext)
-$CXCL1 = 1;  # tree-based context clustering 
-$ERST2 = 1;  # embedded reestimation (clustered)
-$UNTIE = 1;  # untying the parameter sharing structure
-$ERST3 = 1;  # embedded reestimation (untied)
-$CXCL2 = 1;  # tree-based context clustering 
-$ERST4 = 1;  # embedded reestimation (re-clustered)
-$MKUN1 = 1;  # making unseen models (1mix)
-$PGEN1 = 1;  # generating speech parameter sequences (1mix)
-$WGEN1 = 1;  # synthesizing waveforms (1mix)
-$CONVM = 0;  # converting mmfs to the hts_engine file format
-$ENGIN = 0;  # synthesizing waveforms using hts_engine
-$UPMIX = 1;  # increasing the number of mixture components (1mix -> 2mix)
-$SEMIT = 1;  # semi-tied covariance matrices
-$MKUNS = 1;  # making unseen models (stc)
-$PGENS = 1;  # generating speech parameter sequences (stc)
-$WGENS = 1;  # synthesizing waveforms (stc)
-$ERST5 = 1;  # embedded reestimation (2mix)
-$MKUN2 = 1;  # making unseen models (2mix)
-$PGEN2 = 1;  # generating speech parameter sequences (2mix)
-$WGEN2 = 1;  # synthesizing waveforms (2mix)
+$MKEMV = 1; # preparing environments
+$HCMPV = 1; # computing a global variance
+$IN_RE = 1; # initialization & reestimation
+$MMMMF = 1; # making a monophone mmf
+$ERST0 = 1; # embedded reestimation (monophone)
+$MN2FL = 1; # copying monophone mmf to fullcontext one
+$ERST1 = 1; # embedded reestimation (fullcontext)
+$CXCL1 = 1; # tree-based context clustering
+$ERST2 = 1; # embedded reestimation (clustered)
+$UNTIE = 1; # untying the parameter sharing structure
+$ERST3 = 1; # embedded reestimation (untied)
+$CXCL2 = 1; # tree-based context clustering
+$ERST4 = 1; # embedded reestimation (re-clustered)
+$FALGN = 1; # forced alignment using WFST for no-silent GV
+$MCDGV = 1; # making global variance
+$MKUNG = 1; # making unseen models (GV)
+$MKUN1 = 1; # making unseen models (1mix)
+$PGEN1 = 1; # generating speech parameter sequences (1mix)
+$WGEN1 = 1; # synthesizing waveforms (1mix)
+$CONVM = 0; # converting mmfs to the hts_engine file format
+$ENGIN = 0; # synthesizing waveforms using hts_engine
+$SEMIT = 1; # semi-tied covariance matrices
+$MKUNS = 1; # making unseen models (stc)
+$PGENS = 1; # generating speech parameter sequences (stc)
+$WGENS = 1; # synthesizing waveforms (stc)
+$UPMIX = 1; # increasing the number of mixture components (1mix -> 2mix)
+$ERST5 = 1; # embedded reestimation (2mix)
+$MKUN2 = 1; # making unseen models (2mix)
+$PGEN2 = 1; # generating speech parameter sequences (2mix)
+$WGEN2 = 1; # synthesizing waveforms (2mix)
 
 1;

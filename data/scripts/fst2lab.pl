@@ -1,15 +1,12 @@
+#!/usr/bin/perl
 # ----------------------------------------------------------------- #
 #           The HMM-Based Speech Synthesis System (HTS)             #
 #           developed by HTS Working Group                          #
 #           http://hts.sp.nitech.ac.jp/                             #
 # ----------------------------------------------------------------- #
 #                                                                   #
-#  Copyright (c) 2001-2010  Nagoya Institute of Technology          #
+#  Copyright (c) 2008-2010  Nagoya Institute of Technology          #
 #                           Department of Computer Science          #
-#                                                                   #
-#                2001-2008  Tokyo Institute of Technology           #
-#                           Interdisciplinary Graduate School of    #
-#                           Science and Engineering                 #
 #                                                                   #
 # All rights reserved.                                              #
 #                                                                   #
@@ -42,29 +39,81 @@
 # POSSIBILITY OF SUCH DAMAGE.                                       #
 # ----------------------------------------------------------------- #
 
-all: data voice
+if ( $#ARGV != 2 ) {
+   print "perl fst2lab.pl frameshift infile outfile\n";
+   exit(0);
+}
 
-data:
-	@ (cd data ; $(MAKE) all)
+$fshift  = $ARGV[0];    # frame shift (s)
+$infile  = $ARGV[1];
+$outfile = $ARGV[2];
 
-voice:
-	echo "Running a training/synthesis perl script (Training.pl) in background...."
-	@PERL@ scripts/Training.pl scripts/Config.pm > log 2>&1 &
+open( I, "$infile" )    || die "cannot open file : $infile";
+open( O, "> $outfile" ) || die "cannot open file : $outfile";
 
-clean: clean-data clean-voice
+$i_node = -1;           # initial node
+$f_node = -1;           # final node
+@t_list = ();           # transition list
+@f_list = ();           # frame list
+@s_list = ();           # state list
 
-clean-data:
-	@ (cd data ; $(MAKE) clean)
+while ( $line = <I> ) {
+   chomp($line);
+   @list = split( /	/, $line );
+   if ( length( $list[2] ) > 0 ) {
+      if ( $i_node < 0 ) {
+         $i_node = $list[0];
+      }
+      $t_list[ $list[0] ] = $list[1];
+      $f_list[ $list[0] ] = $list[2];
+      $s_list[ $list[0] ] = $list[3];
+   }
+   elsif ( $f_node < 0 ) {
+      $f_node = $list[0];
+   }
+   else {
+      die "unknown format : $list[0]\n";
+   }
+}
 
-clean-voice:
-	rm -rf configs edfiles gen models proto stats trees voices gv
+if ( @t_list <= 0 || @f_list <= 0 || @s_list <= 0 ) {
+   die "no transition : $infile";
+}
 
-distclean: clean
-	@ (cd data; $(MAKE) distclean)
-	rm -f scripts/Config.pm
-	rm -f Makefile
-	rm -f config.log
-	rm -f config.status
-	rm -rf autom4te.cache
+@fslist = ();    # frame list (sort)
+@sslist = ();    # state list (sort)
 
-.PHONY: data voice clean distclean
+for ( $i = $i_node ; $i != $f_node ; ) {
+   if ( $f_list[$i] ne "," && length( $f_list[$i] ) > 0 ) {
+      push( @fslist, $f_list[$i] );
+   }
+   if ( $s_list[$i] ne "," && length( $s_list[$i] ) > 0 ) {
+      push( @sslist, $s_list[$i] );
+   }
+   $i = $t_list[$i];
+}
+
+for ( $i = 0, $j = 0 ; $i < @fslist ; $i++ ) {
+   $tmp1 = substr( $sslist[$i], 0, rindex( $sslist[$i], "_m" ) );
+   $tmp2 = substr( $sslist[$i], rindex( $sslist[$i],    "_m" ) + 2 );
+   $tmp3 = substr( $sslist[$i], rindex( $sslist[$i],    "_s" ) + 2 );
+   substr( $tmp2, index( $tmp2, "_" ) ) = "";
+   if ( $i + 1 == @fslist ) {
+      $s = $j * $fshift * 1e+07;
+      $e = $i * $fshift * 1e+07;
+      print O "$s $e $tmp1\n";
+   }
+   else {
+      $tmp4 = substr( $sslist[ $i + 1 ], rindex( $sslist[ $i + 1 ], "_m" ) + 2 );
+      substr( $tmp4, index( $tmp4, "_" ) ) = "";
+      if ( $tmp2 != $tmp4 ) {
+         $s = $j * $fshift * 1e+07;
+         $e = $i * $fshift * 1e+07;
+         print O "$s $e $tmp1\n";
+         $j = $i;
+      }
+   }
+}
+
+close(O);
+close(I);

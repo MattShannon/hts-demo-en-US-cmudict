@@ -4,7 +4,7 @@
 #           http://hts.sp.nitech.ac.jp/                             #
 # ----------------------------------------------------------------- #
 #                                                                   #
-#  Copyright (c) 2001-2008  Nagoya Institute of Technology          #
+#  Copyright (c) 2001-2010  Nagoya Institute of Technology          #
 #                           Department of Computer Science          #
 #                                                                   #
 #                2001-2008  Tokyo Institute of Technology           #
@@ -72,16 +72,15 @@ DUMPFEATS = @DUMPFEATS@
 SOX = @SOX@
 
 # speech analysis conditions
-BYTESWAP    = @BYTESWAP@     # Little Endian (i*86, x86_64, Alpha, etc.) => 0  Big Endian (PowerPC, SPARC, 680x0, etc.) => 1
-SAMPFREQ    = @SAMPFREQ@ # Sampling frequency (16kHz)
-FRAMESHIFT  = @FRAMESHIFT@    # Frame shift in point (80 = 16000 * 0.005)
-FREQWARP    = @FREQWARP@  # frequency warping factor
-GAMMA       = @GAMMA@     # pole/zero weight for mel-generalized cepstral (MGC) analysis
-MGCORDER    = @MGCORDER@    # order of MGC analysis
-MGCLSP      = @MGCLSP@     # convert MGC coefficients into MGC-LSP form 
-LNGAIN      = @LNGAIN@     # use log gain rather than linear gain
-LOWERF0     = @LOWERF0@    # lower limit for f0 extraction (Hz) 
-UPPERF0     = @UPPERF0@   # upper limit for f0 extraction (Hz) 
+BYTESWAP    = @BYTESWAP@   # Little Endian (i*86, x86_64, Alpha, etc.) => 0  Big Endian (PowerPC, SPARC, 680x0, etc.) => 1
+SAMPFREQ    = @SAMPFREQ@   # Sampling frequency (16kHz)
+FRAMESHIFT  = @FRAMESHIFT@ # Frame shift in point (80 = 16000 * 0.005)
+FREQWARP    = @FREQWARP@   # frequency warping factor
+GAMMA       = @GAMMA@      # pole/zero weight for mel-generalized cepstral (MGC) analysis
+MGCORDER    = @MGCORDER@   # order of MGC analysis
+LNGAIN      = @LNGAIN@     # use logarithmic gain rather than linear gain
+LOWERF0     = @LOWERF0@    # lower limit for f0 extraction (Hz)
+UPPERF0     = @UPPERF0@    # upper limit for f0 extraction (Hz)
 
 # windows for calculating delta features
 MGCWIN      = win/mgc.win
@@ -93,7 +92,7 @@ NBAPWIN     = @NBAPWIN@
 
 all: analysis labels
 
-analysis: straight mgc lf0 bap cmp gv
+analysis: straight mgc lf0 bap cmp
 
 labels: label mlf list scp
 
@@ -137,13 +136,10 @@ mgc:
 	for sp in sp/$(DATASET)_$(SPEAKER)_*.sp; do \
 		base=`basename $${sp} .sp`; \
 		if [ -s $${sp} ]; then \
-			if [ $(MGCLSP) -eq 0 ]; then \
+			if [ $(GAMMA) -eq 0 ]; then \
 				echo "Extracting MGC coefficients from $${sp}"; \
-				if [ $(GAMMA) -ne 0 ]; then \
-					GAMMAOPT="-g $(GAMMA)"; \
-				fi; \
 				$(X2X) +af $${sp} | \
-				$(MGCEP) -a $(FREQWARP) $${GAMMAOPT} -m $(MGCORDER) -l 1024 -j 0 -f 0.0 -q 3 > mgc/$${base}.mgc; \
+				$(MGCEP) -a $(FREQWARP) -m $(MGCORDER) -l 1024 -j 0 -f 0.0 -q 3 > mgc/$${base}.mgc; \
 			else \
 				echo "Extracting MGC-LSP coefficients from $${sp}"; \
 				SAMPKHZ=`expr $(SAMPFREQ) / 1000`; \
@@ -151,7 +147,7 @@ mgc:
 					GAINOPT="-l"; \
 				fi; \
 				$(X2X) +af $${sp} | \
-				$(MGCEP) -a $(FREQWARP) -g $(GAMMA) -m $(MGCORDER) -l 1024 -f 0.0 -q 3 -o 4 | \
+				$(MGCEP) -a $(FREQWARP) -c $(GAMMA) -m $(MGCORDER) -l 1024 -f 0.0 -q 3 -o 4 | \
 				$(LPC2LSP) -m $(MGCORDER) -s $${SAMPKHZ} $${GAINOPT} -n 1024 -p 8 -d 1e-8 > mgc/$${base}.mgc; \
 			fi; \
 			if [ -n "`$(NAN) mgc/$${base}.mgc`" ]; then \
@@ -160,6 +156,7 @@ mgc:
 			fi; \
 		fi; \
 	done
+
 	rm -f tmp
 
 lf0:
@@ -206,6 +203,7 @@ bap:
 cmp: 
 	# Composing training data files from mgc and lf0 files
 	mkdir -p cmp
+
 	for j in 1; do \
 		MGCDIM=`expr $(MGCORDER) + 1`; \
 		LF0DIM=1; \
@@ -248,62 +246,11 @@ cmp:
 	done
 	rm -f cmp/tmp*
 
-gv:
-	mkdir -p gv
-	rm -f gvdata_mgc gvdata_lf0 gvdata_bap
-	# generating GV data
-	for raw in raw/$(DATASET)_$(SPEAKER)_*.raw; do \
-		base=`basename $${raw} .raw`; \
-		if [ -s mgc/$${base}.mgc ]; then \
-			$(VSTAT) -n $(MGCORDER) -o 2 -d mgc/$${base}.mgc >> gvdata_mgc; \
-		fi; \
-		if [ -s lf0/$${base}.lf0 ]; then \
-			$(X2X) +fa lf0/$${base}.lf0 | grep -v '\-1e+10' | $(X2X) +af | $(VSTAT) -l 1 -o 2 -d >> gvdata_lf0; \
-		fi; \
-		if [ -s bap/$${base}.bap ]; then \
-			$(VSTAT) -l 5 -o 2 -d bap/$${base}.bap >> gvdata_bap; \
-		fi; \
-	done
-	# calculating GV pdfs
-	$(VSTAT) -n $(MGCORDER) -o 0 -d gvdata_mgc > gv/gv-mgc.pdf
-	$(VSTAT) -l 1 -o 0 -d gvdata_lf0 > gv/gv-lf0.pdf
-	$(VSTAT) -l 5 -o 0 -d gvdata_bap > gv/gv-bap.pdf
-	
-	# GV pdfs in big endian (for hts_engine)
-	# Add header (dimensionality and # of distributions)
-	if [ $(BYTESWAP) -eq 1 ]; then \
-		MGCDIM=`expr $(MGCORDER) + 1`; \
-		LF0DIM=1; \
-		BAPDIM=5; \
-		echo $${MGCDIM} | $(X2X) +ai >  gv/gv-mgc.pdf.big; \
-		echo "1"        | $(X2X) +ai >> gv/gv-mgc.pdf.big; \
-		cat  gv/gv-mgc.pdf           >> gv/gv-mgc.pdf.big; \
-		echo $${LF0DIM} | $(X2X) +ai >  gv/gv-lf0.pdf.big; \
-		echo "1"        | $(X2X) +ai >> gv/gv-lf0.pdf.big; \
-		cat  gv/gv-lf0.pdf           >> gv/gv-lf0.pdf.big; \
-		echo $${BAPDIM} | $(X2X) +ai >  gv/gv-bap.pdf.big; \
-		echo "1"        | $(X2X) +ai >> gv/gv-bap.pdf.big; \
-		cat  gv/gv-bap.pdf           >> gv/gv-bap.pdf.big; \
-	else \
-		MGCDIM=`expr $(MGCORDER) + 1`; \
-		LF0DIM=1; \
-		BAPDIM=5; \
-		echo $${MGCDIM} | $(X2X) +ai | $(SWAB) +f >  gv/gv-mgc.pdf.big; \
-		echo "1"        | $(X2X) +ai | $(SWAB) +f >> gv/gv-mgc.pdf.big; \
-		$(SWAB) +f gv/gv-mgc.pdf                  >> gv/gv-mgc.pdf.big; \
-		echo $${LF0DIM} | $(X2X) +ai | $(SWAB) +f >  gv/gv-lf0.pdf.big; \
-		echo "1"        | $(X2X) +ai | $(SWAB) +f >> gv/gv-lf0.pdf.big; \
-		$(SWAB) +f gv/gv-lf0.pdf                  >> gv/gv-lf0.pdf.big; \
-		echo $${BAPDIM} | $(X2X) +ai | $(SWAB) +f >  gv/gv-bap.pdf.big; \
-		echo "1"        | $(X2X) +ai | $(SWAB) +f >> gv/gv-bap.pdf.big; \
-		$(SWAB) +f gv/gv-bap.pdf                  >> gv/gv-bap.pdf.big; \
-	fi; \
-	rm -f gvdata_mgc gvdata_lf0 gvdata_bap
-
 label:
+	# Extracting monophone and fullcontext labels from utterance files
 	mkdir -p labels/mono
 	mkdir -p labels/full
-	# Extracting monophone and fullcontext labels from utterance files
+
 	for utt in utts/$(DATASET)_$(SPEAKER)_*.utt; do \
 		base=`basename $${utt} .utt`; \
 		if [ -s $${utt} ]; then \
@@ -322,12 +269,14 @@ mlf:
 	# Generating monophone and fullcontext Master Label Files (MLF)
 	echo "#!MLF!#" > labels/mono.mlf
 	echo "\"*/$(DATASET)_$(SPEAKER)_*.lab\" -> \"@PWD@/data/labels/mono\"" >> labels/mono.mlf
+
 	echo "#!MLF!#" > labels/full.mlf
 	echo "\"*/$(DATASET)_$(SPEAKER)_*.lab\" -> \"@PWD@/data/labels/full\"" >> labels/full.mlf
 
 list:
+	# Generating a fullcontext model list file
 	mkdir -p lists
-	# Generating a fullcntext model list occurred in the training data
+
 	rm -f tmp
 	for lab in labels/full/$(DATASET)_$(SPEAKER)_*.lab; do \
 		if [ -s $${lab} -a -s labels/mono/`basename $${lab}` -a -s cmp/`basename $${lab} .lab`.cmp ]; then \
@@ -336,7 +285,8 @@ list:
 	done
 	sort -u tmp > lists/full.list
 	rm -f tmp
-	# Generating a fullcontext model list including unseen models 
+
+	# Generating a fullcontext model list file which includes unseen models
 	rm -f tmp
 	cat lists/full.list > tmp
 	for lab in labels/gen/*.lab; do \
@@ -344,7 +294,8 @@ list:
 	done
 	sort -u tmp > lists/full_all.list
 	rm -f tmp
-	# Generating a monophone list 
+
+	# Generating a monophone list file
 	rm -f tmp
 	for lab in labels/mono/$(DATASET)_$(SPEAKER)_*.lab; do \
 		if [ -s $${lab} -a -s labels/full/`basename $${lab}` -a -s cmp/`basename $${lab} .lab`.cmp ]; then \
@@ -355,14 +306,16 @@ list:
 	rm -f tmp
 
 scp:
-	mkdir -p scp
 	# Generating a trainig data script
+	mkdir -p scp
+
 	rm -f scp/train.scp
 	for cmp in @PWD@/data/cmp/$(DATASET)_$(SPEAKER)_*.cmp; do \
 		if [ -s $${cmp} -a -s labels/mono/`basename $${cmp} .cmp`.lab -a -s labels/full/`basename $${cmp} .cmp`.lab ]; then \
 			echo $${cmp} >> scp/train.scp; \
 		fi \
 	done
+
 	# Generating a generation label script
 	rm -f scp/gen.scp
 	for lab in @PWD@/data/labels/gen/*.lab; do \
@@ -370,9 +323,12 @@ scp:
 	done
 
 
-clean: clean-straight clean-mgc clean-lf0 clean-cmp clean-gv clean-label clean-mlf clean-list clean-scp
+clean: clean-straight clean-mgc clean-lf0 clean-bap clean-cmp clean-label clean-mlf clean-list clean-scp
 
-clean-straight: clean-sp clean-f0 clean-ap
+clean-straight: clean-wav clean-sp clean-f0 clean-ap
+
+clean-wav:
+	rm -rf wav
 
 clean-sp:
 	rm -rf sp
@@ -382,18 +338,18 @@ clean-f0:
 
 clean-ap:
 	rm -rf ap
-	
+
 clean-mgc:
 	rm -rf mgc
 
 clean-lf0:
 	rm -rf lf0
 
+clean-bap:
+	rm -rf bap
+
 clean-cmp:
 	rm -rf cmp
-
-clean-gv:
-	rm -rf gv
 
 clean-label:
 	rm -rf labels/mono
@@ -411,4 +367,4 @@ clean-scp:
 distclean: clean
 	rm -f Makefile
 
-.PHONY: all analysis labels mgc lf0 bap f0 sp ap cmp gv label mlf list scp clean 
+.PHONY: all analysis labels mgc lf0 bap f0 wav sp ap cmp label mlf list scp clean

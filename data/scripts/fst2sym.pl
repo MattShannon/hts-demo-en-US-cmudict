@@ -1,15 +1,12 @@
+#!/usr/bin/perl
 # ----------------------------------------------------------------- #
 #           The HMM-Based Speech Synthesis System (HTS)             #
 #           developed by HTS Working Group                          #
 #           http://hts.sp.nitech.ac.jp/                             #
 # ----------------------------------------------------------------- #
 #                                                                   #
-#  Copyright (c) 2001-2010  Nagoya Institute of Technology          #
+#  Copyright (c) 2008-2010  Nagoya Institute of Technology          #
 #                           Department of Computer Science          #
-#                                                                   #
-#                2001-2008  Tokyo Institute of Technology           #
-#                           Interdisciplinary Graduate School of    #
-#                           Science and Engineering                 #
 #                                                                   #
 # All rights reserved.                                              #
 #                                                                   #
@@ -42,29 +39,43 @@
 # POSSIBILITY OF SUCH DAMAGE.                                       #
 # ----------------------------------------------------------------- #
 
-all: data voice
+if ( $#ARGV != 2 ) {
+   print "perl fst2sym.pl infile1 infile2 outfile\n";
+   exit(0);
+}
 
-data:
-	@ (cd data ; $(MAKE) all)
+$infile1 = $ARGV[0];
+$infile2 = $ARGV[1];
+$outfile = $ARGV[2];
 
-voice:
-	echo "Running a training/synthesis perl script (Training.pl) in background...."
-	@PERL@ scripts/Training.pl scripts/Config.pm > log 2>&1 &
+@sym = ("<eps>");
 
-clean: clean-data clean-voice
+open( I, "$infile1" );
+while ( $line = <I> ) {
+   @list = split( / /, $line );
+   if ( length( $list[4] ) > 0 ) {
+      push( @sym, $list[2] );
+      push( @sym, $list[3] );
+   }
+}
+close(I);
 
-clean-data:
-	@ (cd data ; $(MAKE) clean)
+open( I, "$infile2" );
+while ( $line = <I> ) {
+   @list = split( / /, $line );
+   if ( length( $list[4] ) > 0 ) {
+      push( @sym, $list[2] );
+      push( @sym, $list[3] );
+   }
+}
+close(I);
 
-clean-voice:
-	rm -rf configs edfiles gen models proto stats trees voices gv
-
-distclean: clean
-	@ (cd data; $(MAKE) distclean)
-	rm -f scripts/Config.pm
-	rm -f Makefile
-	rm -f config.log
-	rm -f config.status
-	rm -rf autom4te.cache
-
-.PHONY: data voice clean distclean
+open( O, "> $outfile" );
+for ( $i = 0, $j = 0 ; $i < @sym ; $i++ ) {
+   unless ( $seen{ $sym[$i] } ) {
+      $seen{ $sym[$i] } = 1;
+      print O "$sym[$i] $j\n";
+      $j++;
+   }
+}
+close(O);
