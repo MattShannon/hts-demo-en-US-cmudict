@@ -1432,47 +1432,47 @@ QS "C-Phrase_Num-Syls<=20"	{*/H:?=*,*/H:1?=*,*/H:20=*}
 
 
 
-QS "C-Phrase_Num-Words==x"	{*=x@*}
-QS "C-Phrase_Num-Words==0"	{*=0@*}
-QS "C-Phrase_Num-Words==1"	{*=1@*}
-QS "C-Phrase_Num-Words==2"	{*=2@*}
-QS "C-Phrase_Num-Words==3"	{*=3@*}
-QS "C-Phrase_Num-Words==4"	{*=4@*}
-QS "C-Phrase_Num-Words==5"	{*=5@*}
-QS "C-Phrase_Num-Words==6"	{*=6@*}
-QS "C-Phrase_Num-Words==7"	{*=7@*}
-QS "C-Phrase_Num-Words==8"	{*=8@*}
-QS "C-Phrase_Num-Words==9"	{*=9@*}
-QS "C-Phrase_Num-Words==10"	{*=10@*}
-QS "C-Phrase_Num-Words==11"	{*=11@*}
-QS "C-Phrase_Num-Words==12"	{*=12@*}
-QS "C-Phrase_Num-Words==13"	{*=13@*}
+QS "C-Phrase_Num-Words==x"	{*=x^*}
+QS "C-Phrase_Num-Words==0"	{*=0^*}
+QS "C-Phrase_Num-Words==1"	{*=1^*}
+QS "C-Phrase_Num-Words==2"	{*=2^*}
+QS "C-Phrase_Num-Words==3"	{*=3^*}
+QS "C-Phrase_Num-Words==4"	{*=4^*}
+QS "C-Phrase_Num-Words==5"	{*=5^*}
+QS "C-Phrase_Num-Words==6"	{*=6^*}
+QS "C-Phrase_Num-Words==7"	{*=7^*}
+QS "C-Phrase_Num-Words==8"	{*=8^*}
+QS "C-Phrase_Num-Words==9"	{*=9^*}
+QS "C-Phrase_Num-Words==10"	{*=10^*}
+QS "C-Phrase_Num-Words==11"	{*=11^*}
+QS "C-Phrase_Num-Words==12"	{*=12^*}
+QS "C-Phrase_Num-Words==13"	{*=13^*}
 
-QS "C-Phrase_Num-Words<=0"	{*=x@*,*=0@*}
-QS "C-Phrase_Num-Words<=1"	{*=x@*,*=0@*,*=1@*}
-QS "C-Phrase_Num-Words<=2"	{*=x@*,*=0@*,*=1@*,*=2@*}
-QS "C-Phrase_Num-Words<=3"	{*=x@*,*=0@*,*=1@*,*=2@*,*=3@*}
-QS "C-Phrase_Num-Words<=4"	{*=x@*,*=0@*,*=1@*,*=2@*,*=3@*,*=4@*}
-QS "C-Phrase_Num-Words<=5"	{*=x@*,*=0@*,*=1@*,*=2@*,*=3@*,*=4@*,*=5@*}
-QS "C-Phrase_Num-Words<=6"	{*=x@*,*=0@*,*=1@*,*=2@*,*=3@*,*=4@*,*=5@*,*=6@*}
-QS "C-Phrase_Num-Words<=7"	{*=x@*,*=0@*,*=1@*,*=2@*,*=3@*,*=4@*,*=5@*,*=6@*,*=7@*}
-QS "C-Phrase_Num-Words<=8"	{*=x@*,*=0@*,*=1@*,*=2@*,*=3@*,*=4@*,*=5@*,*=6@*,*=7@*,*=8@*}
-QS "C-Phrase_Num-Words<=9"	{*=x@*,*=0@*,*=1@*,*=2@*,*=3@*,*=4@*,*=5@*,*=6@*,*=7@*,*=8@*,*=9@*}
-QS "C-Phrase_Num-Words<=10"	{*=x@*,*=0@*,*=1@*,*=2@*,*=3@*,*=4@*,*=5@*,*=6@*,*=7@*,*=8@*,*=9@*,*=10@*}
-QS "C-Phrase_Num-Words<=11"	{*=x@*,*=0@*,*=1@*,*=2@*,*=3@*,*=4@*,*=5@*,*=6@*,*=7@*,*=8@*,*=9@*,*=10@*,*=11@*}
-QS "C-Phrase_Num-Words<=12"	{*=x@*,*=0@*,*=1@*,*=2@*,*=3@*,*=4@*,*=5@*,*=6@*,*=7@*,*=8@*,*=9@*,*=10@*,*=11@*,*=12@*}
-QS "C-Phrase_Num-Words<=13"	{*=x@*,*=0@*,*=1@*,*=2@*,*=3@*,*=4@*,*=5@*,*=6@*,*=7@*,*=8@*,*=9@*,*=10@*,*=11@*,*=12@*,*=13@*}
+QS "C-Phrase_Num-Words<=0"	{*=x^*,*=0^*}
+QS "C-Phrase_Num-Words<=1"	{*=x^*,*=0^*,*=1^*}
+QS "C-Phrase_Num-Words<=2"	{*=x^*,*=0^*,*=1^*,*=2^*}
+QS "C-Phrase_Num-Words<=3"	{*=x^*,*=0^*,*=1^*,*=2^*,*=3^*}
+QS "C-Phrase_Num-Words<=4"	{*=x^*,*=0^*,*=1^*,*=2^*,*=3^*,*=4^*}
+QS "C-Phrase_Num-Words<=5"	{*=x^*,*=0^*,*=1^*,*=2^*,*=3^*,*=4^*,*=5^*}
+QS "C-Phrase_Num-Words<=6"	{*=x^*,*=0^*,*=1^*,*=2^*,*=3^*,*=4^*,*=5^*,*=6^*}
+QS "C-Phrase_Num-Words<=7"	{*=x^*,*=0^*,*=1^*,*=2^*,*=3^*,*=4^*,*=5^*,*=6^*,*=7^*}
+QS "C-Phrase_Num-Words<=8"	{*=x^*,*=0^*,*=1^*,*=2^*,*=3^*,*=4^*,*=5^*,*=6^*,*=7^*,*=8^*}
+QS "C-Phrase_Num-Words<=9"	{*=x^*,*=0^*,*=1^*,*=2^*,*=3^*,*=4^*,*=5^*,*=6^*,*=7^*,*=8^*,*=9^*}
+QS "C-Phrase_Num-Words<=10"	{*=x^*,*=0^*,*=1^*,*=2^*,*=3^*,*=4^*,*=5^*,*=6^*,*=7^*,*=8^*,*=9^*,*=10^*}
+QS "C-Phrase_Num-Words<=11"	{*=x^*,*=0^*,*=1^*,*=2^*,*=3^*,*=4^*,*=5^*,*=6^*,*=7^*,*=8^*,*=9^*,*=10^*,*=11^*}
+QS "C-Phrase_Num-Words<=12"	{*=x^*,*=0^*,*=1^*,*=2^*,*=3^*,*=4^*,*=5^*,*=6^*,*=7^*,*=8^*,*=9^*,*=10^*,*=11^*,*=12^*}
+QS "C-Phrase_Num-Words<=13"	{*=x^*,*=0^*,*=1^*,*=2^*,*=3^*,*=4^*,*=5^*,*=6^*,*=7^*,*=8^*,*=9^*,*=10^*,*=11^*,*=12^*,*=13^*}
 
 
 
-QS "Pos_C-Phrase_in_Utterance(Fw)==1"	{*@1=*}
-QS "Pos_C-Phrase_in_Utterance(Fw)==2"	{*@2=*}
-QS "Pos_C-Phrase_in_Utterance(Fw)==3"	{*@3=*}
-QS "Pos_C-Phrase_in_Utterance(Fw)==4"	{*@4=*}
+QS "Pos_C-Phrase_in_Utterance(Fw)==1"	{*^1=*}
+QS "Pos_C-Phrase_in_Utterance(Fw)==2"	{*^2=*}
+QS "Pos_C-Phrase_in_Utterance(Fw)==3"	{*^3=*}
+QS "Pos_C-Phrase_in_Utterance(Fw)==4"	{*^4=*}
 
-QS "Pos_C-Phrase_in_Utterance(Fw)<=2"	{*@1=*,*@2=*}
-QS "Pos_C-Phrase_in_Utterance(Fw)<=3"	{*@1=*,*@2=*,*@3=*}
-QS "Pos_C-Phrase_in_Utterance(Fw)<=4"	{*@1=*,*@2=*,*@3=*,*@4=*}
+QS "Pos_C-Phrase_in_Utterance(Fw)<=2"	{*^1=*,*^2=*}
+QS "Pos_C-Phrase_in_Utterance(Fw)<=3"	{*^1=*,*^2=*,*^3=*}
+QS "Pos_C-Phrase_in_Utterance(Fw)<=4"	{*^1=*,*^2=*,*^3=*,*^4=*}
 
 
 

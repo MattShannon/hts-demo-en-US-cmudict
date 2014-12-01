@@ -5,7 +5,7 @@
 #           http://hts.sp.nitech.ac.jp/                             #
 # ----------------------------------------------------------------- #
 #                                                                   #
-#  Copyright (c) 2001-2010  Nagoya Institute of Technology          #
+#  Copyright (c) 2001-2011  Nagoya Institute of Technology          #
 #                           Department of Computer Science          #
 #                                                                   #
 #                2001-2008  Tokyo Institute of Technology           #
@@ -88,6 +88,12 @@ $cfg{'nvf'} = "$prjdir/configs/nvf.cnf";
 $cfg{'cnv'} = "$prjdir/configs/cnv.cnf";
 $cfg{'stc'} = "$prjdir/configs/stc.cnf";
 $cfg{'syn'} = "$prjdir/configs/syn.cnf";
+foreach $type (@cmp) {
+   $cfg{$type} = "$prjdir/configs/${type}.cnf";
+}
+foreach $type (@dur) {
+   $cfg{$type} = "$prjdir/configs/${type}.cnf";
+}
 
 # name of proto type definition file
 $prtfile{'cmp'} = "$prjdir/proto/qst${qnum}/ver$ver/state-${nState}_stream-$nstream{'total'}";
@@ -102,6 +108,7 @@ foreach $set (@SET) {
    $hinit{$set}   = "$model{$set}/HInit";
    $hrest{$set}   = "$model{$set}/HRest";
    $vfloors{$set} = "$model{$set}/vFloors";
+   $avermmf{$set} = "$model{$set}/average.mmf";
    $initmmf{$set} = "$model{$set}/init.mmf";
    $monommf{$set} = "$model{$set}/monophone.mmf";
    $fullmmf{$set} = "$model{$set}/fullcontext.mmf";
@@ -110,7 +117,6 @@ foreach $set (@SET) {
    $reclmmf{$set} = "$model{$set}/re_clustered.mmf";
    $rclammf{$set} = "$model{$set}/re_clustered_all.mmf";
    $tiedlst{$set} = "$model{$set}/tiedlist";
-   $hfst{$set}    = "$model{$set}/HFst";
    $stcmmf{$set}  = "$model{$set}/stc.mmf";
    $stcammf{$set} = "$model{$set}/stc_all.mmf";
    $stcbase{$set} = "$model{$set}/stc.base";
@@ -181,7 +187,7 @@ foreach $type (@cmp) {
    $prtfile{'gv'} .= "_${type}-$ordr{$type}";
 }
 $prtfile{'gv'} .= ".prt";
-$initmmf{'gv'} = "$gvdir/init.mmf";
+$avermmf{'gv'} = "$gvdir/average.mmf";
 $fullmmf{'gv'} = "$gvdir/fullcontext.mmf";
 $clusmmf{'gv'} = "$gvdir/clustered.mmf";
 $clsammf{'gv'} = "$gvdir/clustered_all.mmf";
@@ -198,20 +204,18 @@ foreach $type (@cmp) {
 }
 
 # HTS Commands & Options ========================
-$HCompV{'cmp'} = "$HCOMPV -A    -C $cfg{'trn'} -D -T 1 -S $scp{'trn'} ";
-$HCompV{'gv'}  = "$HCOMPV -A    -C $cfg{'trn'} -D -T 1 -S $scp{'gv'}  -m ";
-$HInit         = "$HINIT  -A    -C $cfg{'trn'} -D -T 1 -S $scp{'trn'}                -m 1 -u tmvw    -w $wf ";
-$HRest         = "$HREST  -A    -C $cfg{'trn'} -D -T 1 -S $scp{'trn'}                -m 1 -u tmvw    -w $wf ";
-$HERest{'mon'} = "$HEREST -A    -C $cfg{'trn'} -D -T 1 -S $scp{'trn'} -I $mlf{'mon'} -m 1 -u tmvwdmv -w $wf -t $beam ";
-$HERest{'ful'} = "$HEREST -A -B -C $cfg{'trn'} -D -T 1 -S $scp{'trn'} -I $mlf{'ful'} -m 1 -u tmvwdmv -w $wf -t $beam ";
-$HERest{'gv'}  = "$HEREST -A    -C $cfg{'trn'} -D -T 1 -S $scp{'gv'}  -I $mlf{'gv'}  -m 1 ";
-$HHEd{'trn'}   = "$HHED   -A -B -C $cfg{'trn'} -D -T 1 -p -i ";
-$HHEd{'cnv'}   = "$HHED   -A -B -C $cfg{'cnv'} -D -T 1 -p -i ";
-$HFst          = "$HFST   -A    -C $cfg{'trn'} -D -T 1 -S $scp{'trn'} -I $mlf{'mon'} -v 4.0 -w 1.0 ";
-$HMGenS        = "$HMGENS -A -B -C $cfg{'syn'} -D -T 1 -S $scp{'gen'} -t $beam ";
-
-# Initial Values ========================
-$minocc = 0.0;
+$HCompV{'cmp'} = "$HCOMPV    -A    -C $cfg{'trn'} -D -T 1 -S $scp{'trn'} -m ";
+$HCompV{'gv'}  = "$HCOMPV    -A    -C $cfg{'trn'} -D -T 1 -S $scp{'gv'}  -m ";
+$HList         = "$HLIST     -A    -C $cfg{'trn'} -D -T 1 -S $scp{'trn'} -h -z ";
+$HInit         = "$HINIT     -A    -C $cfg{'trn'} -D -T 1 -S $scp{'trn'}                -m 1 -u tmvw    -w $wf ";
+$HRest         = "$HREST     -A    -C $cfg{'trn'} -D -T 1 -S $scp{'trn'}                -m 1 -u tmvw    -w $wf ";
+$HERest{'mon'} = "$HEREST    -A    -C $cfg{'trn'} -D -T 1 -S $scp{'trn'} -I $mlf{'mon'} -m 1 -u tmvwdmv -w $wf -t $beam ";
+$HERest{'ful'} = "$HEREST    -A -B -C $cfg{'trn'} -D -T 1 -S $scp{'trn'} -I $mlf{'ful'} -m 1 -u tmvwdmv -w $wf -t $beam ";
+$HERest{'gv'}  = "$HEREST    -A    -C $cfg{'trn'} -D -T 1 -S $scp{'gv'}  -I $mlf{'gv'}  -m 1 ";
+$HHEd{'trn'}   = "$HHED      -A -B -C $cfg{'trn'} -D -T 1 -p -i ";
+$HHEd{'cnv'}   = "$HHED      -A -B -C $cfg{'cnv'} -D -T 1 -p -i ";
+$HSMMAlign     = "$HSMMALIGN -A    -C $cfg{'trn'} -D -T 1 -S $scp{'trn'} -I $mlf{'mon'} -t $beam -w 1.0 ";
+$HMGenS        = "$HMGENS    -A -B -C $cfg{'syn'} -D -T 1 -S $scp{'gen'} -t $beam ";
 
 # =============================================================
 # ===================== Main Program ==========================
@@ -231,7 +235,6 @@ if ($MKEMV) {
       mkdir "$model{$set}", 0755;
       mkdir "$hinit{$set}", 0755;
       mkdir "$hrest{$set}", 0755;
-      mkdir "$hfst{$set}",  0755;
       mkdir "$hed{$set}",   0755;
       mkdir "$trd{$set}",   0755;
    }
@@ -248,65 +251,127 @@ if ($MKEMV) {
 if ($HCMPV) {
    print_time("computing variance floors");
 
-   # compute variance floors
-   shell("$HCompV{'cmp'} -M $model{'cmp'} -o $initmmf{'cmp'} $prtfile{'cmp'}");
+   # make average model and compute variance floors
+   shell("$HCompV{'cmp'} -M $model{'cmp'} -o $avermmf{'cmp'} $prtfile{'cmp'}");
    shell("head -n 1 $prtfile{'cmp'} > $initmmf{'cmp'}");
-   shell("cat $vfloors{cmp} >> $initmmf{'cmp'}");
+   shell("cat $vfloors{'cmp'} >> $initmmf{'cmp'}");
+
+   shell("$HList | $TEE $model{'cmp'}/HList");
+   $dsum1 = 0.0;
+   $dsum2 = 0.0;
+   $dnum  = 0;
+   open( LOG, "$model{'cmp'}/HList" ) || die "Cannot open $!";
+   while ( $str = <LOG> ) {
+      if ( index( $str, " Source: " ) >= 0 ) {
+         $str = substr( $str, index( $str, " Source: " ) + 9 );
+         while ( index( $str, " " ) >= 0 || index( $str, "\t" ) >= 0 ) { substr( $str, -1, 1 ) = ""; }
+         $base = `basename $str .cmp`;
+         chomp($base);
+      }
+      elsif ( index( $str, "Num Samples:" ) >= 0 ) {
+         $nframe = substr( $str, 14, index( $str, "File Format:" ) - 14 );
+         $nlab = `cat $datdir/labels/mono/$base.lab | $WC -l`;
+         chomp($nlab);
+         $dtmp = $nframe / ( $nlab * $nState );
+         $dsum1 += $dtmp;
+         $dsum2 += $dtmp * $dtmp;
+         $dnum++;
+      }
+   }
+   close(LOG);
+   $dmean = $dsum1 / $dnum;
+   $dvari = $dsum2 / $dnum - $dmean * $dmean;
+
+   make_duration_vfloor( $dmean, $dvari );
 }
 
 # HInit & HRest (initialization & reestimation)
 if ($IN_RE) {
    print_time("initialization & reestimation");
 
-   open( LIST, $lst{'mon'} ) || die "Cannot open $!";
-   while ( $phone = <LIST> ) {
+   if ($daem) {
+      open( LIST, $lst{'mon'} ) || die "Cannot open $!";
+      while ( $phone = <LIST> ) {
 
-      # trimming leading and following whitespace characters
-      $phone =~ s/^\s+//;
-      $phone =~ s/\s+$//;
+         # trimming leading and following whitespace characters
+         $phone =~ s/^\s+//;
+         $phone =~ s/\s+$//;
 
-      # skip a blank line
-      if ( $phone eq '' ) {
-         next;
-      }
-      $lab = $mlf{'mon'};
+         # skip a blank line
+         if ( $phone eq '' ) {
+            next;
+         }
 
-      if ( grep( $_ eq $phone, keys %mdcp ) <= 0 ) {
          print "=============== $phone ================\n";
-         shell("$HInit -H $initmmf{'cmp'} -M $hinit{'cmp'} -I $lab -l $phone -o $phone $prtfile{'cmp'}");
-         shell("$HRest -H $initmmf{'cmp'} -M $hrest{'cmp'} -I $lab -l $phone -g $hrest{'dur'}/$phone $hinit{'cmp'}/$phone");
-      }
-   }
-   close(LIST);
-
-   open( LIST, $lst{'mon'} ) || die "Cannot open $!";
-   while ( $phone = <LIST> ) {
-
-      # trimming leading and following whitespace characters
-      $phone =~ s/^\s+//;
-      $phone =~ s/\s+$//;
-
-      # skip a blank line
-      if ( $phone eq '' ) {
-         next;
-      }
-
-      if ( grep( $_ eq $phone, keys %mdcp ) > 0 ) {
-         print "=============== $phone ================\n";
-         print "use $mdcp{$phone} instead of $phone\n";
+         print "use average model instead of $phone\n";
          foreach $set (@SET) {
-            open( SRC, "$hrest{$set}/$mdcp{$phone}" ) || die "Cannot open $!";
-            open( TGT, ">$hrest{$set}/$phone" )       || die "Cannot open $!";
-            while (<SRC>) {
-               s/~h \"$mdcp{$phone}\"/~h \"$phone\"/;
-               print TGT;
+            open( SRC, "$avermmf{$set}" )       || die "Cannot open $!";
+            open( TGT, ">$hrest{$set}/$phone" ) || die "Cannot open $!";
+            while ( $str = <SRC> ) {
+               if ( index( $str, "~h" ) == 0 ) {
+                  print TGT "~h \"$phone\"\n";
+               }
+               else {
+                  print TGT "$str";
+               }
             }
             close(TGT);
             close(SRC);
          }
       }
+      close(LIST);
    }
-   close(LIST);
+   else {
+      open( LIST, $lst{'mon'} ) || die "Cannot open $!";
+      while ( $phone = <LIST> ) {
+
+         # trimming leading and following whitespace characters
+         $phone =~ s/^\s+//;
+         $phone =~ s/\s+$//;
+
+         # skip a blank line
+         if ( $phone eq '' ) {
+            next;
+         }
+         $lab = $mlf{'mon'};
+
+         if ( grep( $_ eq $phone, keys %mdcp ) <= 0 ) {
+            print "=============== $phone ================\n";
+            shell("$HInit -H $initmmf{'cmp'} -M $hinit{'cmp'} -I $lab -l $phone -o $phone $prtfile{'cmp'}");
+            shell("$HRest -H $initmmf{'cmp'} -M $hrest{'cmp'} -I $lab -l $phone -g $hrest{'dur'}/$phone $hinit{'cmp'}/$phone");
+         }
+      }
+      close(LIST);
+
+      open( LIST, $lst{'mon'} ) || die "Cannot open $!";
+      while ( $phone = <LIST> ) {
+
+         # trimming leading and following whitespace characters
+         $phone =~ s/^\s+//;
+         $phone =~ s/\s+$//;
+
+         # skip a blank line
+         if ( $phone eq '' ) {
+            next;
+         }
+
+         if ( grep( $_ eq $phone, keys %mdcp ) > 0 ) {
+            print "=============== $phone ================\n";
+            print "use $mdcp{$phone} instead of $phone\n";
+            foreach $set (@SET) {
+               open( SRC, "$hrest{$set}/$mdcp{$phone}" ) || die "Cannot open $!";
+               open( TGT, ">$hrest{$set}/$phone" )       || die "Cannot open $!";
+               while (<SRC>) {
+                  s/~h \"$mdcp{$phone}\"/~h \"$phone\"/;
+                  print TGT;
+               }
+               close(TGT);
+               close(SRC);
+            }
+         }
+      }
+      close(LIST);
+   }
 }
 
 # HHEd (making a monophone mmf)
@@ -340,11 +405,25 @@ if ($MMMMF) {
 if ($ERST0) {
    print_time("embedded reestimation (monophone)");
 
-   for ( $i = 1 ; $i <= $nIte ; $i++ ) {
+   if ($daem) {
+      for ( $i = 1 ; $i <= $daem_nIte ; $i++ ) {
+         for ( $j = 1 ; $j <= $nIte ; $j++ ) {
 
-      # embedded reestimation
-      print("\n\nIteration $i of Embedded Re-estimation\n");
-      shell("$HERest{'mon'} -H $monommf{'cmp'} -N $monommf{'dur'} -M $model{'cmp'} -R $model{'dur'} $lst{'mon'} $lst{'mon'}");
+            # embedded reestimation
+            $k = $j + ( $i - 1 ) * $nIte;
+            print("\n\nIteration $k of Embedded Re-estimation\n");
+            $k = ( $i / $daem_nIte )**$daem_alpha;
+            shell("$HERest{'mon'} -k $k -H $monommf{'cmp'} -N $monommf{'dur'} -M $model{'cmp'} -R $model{'dur'} $lst{'mon'} $lst{'mon'}");
+         }
+      }
+   }
+   else {
+      for ( $i = 1 ; $i <= $nIte ; $i++ ) {
+
+         # embedded reestimation
+         print("\n\nIteration $i of Embedded Re-estimation\n");
+         shell("$HERest{'mon'} -H $monommf{'cmp'} -N $monommf{'dur'} -M $model{'cmp'} -R $model{'dur'} $lst{'mon'} $lst{'mon'}");
+      }
    }
 
    # compress reestimated model
@@ -415,10 +494,8 @@ if ($CXCL1) {
       $footer = "";
       foreach $type ( @{ $ref{$set} } ) {
          if ( $strw{$type} > 0.0 ) {
-            $minocc = $mocc{$type};
-            make_config();
             make_edfile_state($type);
-            shell("$HHEd{'trn'} -H $clusmmf{$set} $mdl{$type} -w $clusmmf{$set} $cxc{$type} $lst{'ful'}");
+            shell("$HHEd{'trn'} -C $cfg{$type} -H $clusmmf{$set} $mdl{$type} -w $clusmmf{$set} $cxc{$type} $lst{'ful'}");
             $footer .= "_$type";
             shell("gzip -c $clusmmf{$set} > $clusmmf{$set}$footer.gz");
          }
@@ -437,7 +514,7 @@ if ($ERST2) {
 
    # compress reestimated mmfs
    foreach $set (@SET) {
-      shell("gzip -c $clusmmf{$set} > $clusmmf{$set}.embedded2.gz");
+      shell("gzip -c $clusmmf{$set} > $clusmmf{$set}.embedded.gz");
    }
 }
 
@@ -483,15 +560,13 @@ if ($CXCL2) {
 
       $footer = "";
       foreach $type ( @{ $ref{$set} } ) {
-         $minocc = $mocc{$type};
-         make_config();
          make_edfile_state($type);
-         shell("$HHEd{'trn'} -H $reclmmf{$set} $mdl{$type} -w $reclmmf{$set} $cxc{$type} $lst{'ful'}");
+         shell("$HHEd{'trn'} -C $cfg{$type} -H $reclmmf{$set} $mdl{$type} -w $reclmmf{$set} $cxc{$type} $lst{'ful'}");
 
          $footer .= "_$type";
          shell("gzip -c $reclmmf{$set} > $reclmmf{$set}$footer.gz");
       }
-      shell("gzip -c $reclmmf{$set} > $reclmmf{$set}.noembedded.gz");
+      shell("gzip -c $reclmmf{$set} > $reclmmf{$set}.nonembedded.gz");
    }
 }
 
@@ -510,37 +585,17 @@ if ($ERST4) {
    }
 }
 
-# HFst (forced alignment using WFST for no-silent GV)
+# HSMMAlign (forced alignment for no-silent GV)
 if ($FALGN) {
-   print_time("forced alignment using WFST for no-silent GV");
+   print_time("forced alignment for no-silent GV");
 
    if ( $useGV && $nosilgv && @slnt > 0 ) {
 
       # make directory
       mkdir "$gvfaldir", 0755;
 
-      # make WFST
-      shell("$HFst -H $monommf{'cmp'} -N $monommf{'dur'} -m $hfst{'cmp'} -r $hfst{'dur'} $lst{'mon'} $lst{'mon'}");
-
-      # compose, optimize, find best path, and convert WFST to label
-      open( SCP, $scp{'trn'} ) || die "Cannot open $!";
-      while (<SCP>) {
-         $cmp = $_;
-         chomp($cmp);
-         $base = `basename $cmp .cmp`;
-         chomp($base);
-         print "Forsed alignment from $base.fst using OpenFst...";
-         shell("$PERL $datdir/scripts/fst2sym.pl $hfst{'cmp'}/$base.fst $hfst{'dur'}/$base.fst $gvfaldir/$base.tmp1.sym");
-         shell("$FSTCOMPILE --isymbols=$gvfaldir/$base.tmp1.sym --osymbols=$gvfaldir/$base.tmp1.sym $hfst{'cmp'}/$base.fst $gvfaldir/$base.tmp2.fst");
-         shell("$FSTCOMPILE --isymbols=$gvfaldir/$base.tmp1.sym --osymbols=$gvfaldir/$base.tmp1.sym $hfst{'dur'}/$base.fst $gvfaldir/$base.tmp3.fst");
-         shell("$FSTCOMPOSE $gvfaldir/$base.tmp2.fst $gvfaldir/$base.tmp3.fst $gvfaldir/$base.tmp4.fst");
-         shell("$FSTSHORTESTPATH $gvfaldir/$base.tmp4.fst $gvfaldir/$base.tmp5.fst");
-         shell("$FSTPRINT --isymbols=$gvfaldir/$base.tmp1.sym --osymbols=$gvfaldir/$base.tmp1.sym $gvfaldir/$base.tmp5.fst $gvfaldir/$base.tmp6.fst");
-         shell("$PERL $datdir/scripts/fst2lab.pl $fr $gvfaldir/$base.tmp6.fst $gvfaldir/$base.lab");
-         shell("rm -f $gvfaldir/$base.tmp1.sym $gvfaldir/$base.tmp2.fst $gvfaldir/$base.tmp3.fst $gvfaldir/$base.tmp4.fst $gvfaldir/$base.tmp5.fst $gvfaldir/$base.tmp6.fst");
-         print "done.\n";
-      }
-      close(SCP);
+      # forced alignment
+      shell("$HSMMAlign -H $monommf{'cmp'} -N $monommf{'dur'} -m $gvfaldir $lst{'mon'} $lst{'mon'}");
    }
 }
 
@@ -560,13 +615,13 @@ if ($MCDGV) {
       # make training data, labels, scp, list, and mlf
       make_data_gv();
 
-      # make initial model
-      shell("$HCompV{'gv'} -o init.mmf -M $gvdir $prtfile{'gv'}");
+      # make average model
+      shell("$HCompV{'gv'} -o average.mmf -M $gvdir $prtfile{'gv'}");
 
       if ($cdgv) {
 
          # make full context depdent model
-         copy_init2full_gv();
+         copy_aver2full_gv();
          shell("$HERest{'gv'} -C $cfg{'nvf'} -s $gvdir/gv.stats -w 0.0 -H $fullmmf{'gv'} -M $gvdir $gvdir/gv.list");
 
          # context-clustering
@@ -582,7 +637,7 @@ if ($MCDGV) {
          shell("$HERest{'gv'} -H $clusmmf{'gv'} -M $gvdir $gvdir/gv.list");
       }
       else {
-         copy_init2clus_gv();
+         copy_aver2clus_gv();
       }
    }
 }
@@ -686,7 +741,7 @@ if ($ENGIN) {
 
    # hts_engine command line & options
    # model file & trees
-   $hts_engine = "$ENGINE -td $trv{'dur'} -tf $trv{'lf0'} -tm $trv{'mgc'} -md $pdf{'dur'} -mf $pdf{'lf0'} -mm $pdf{'mgc'} ";
+   $hts_engine = "$ENGINE -td $trv{'dur'} -tf $trv{'lf0'} -tm $trv{'mgc'} -tl $trv{'lpf'} -md $pdf{'dur'} -mf $pdf{'lf0'} -mm $pdf{'mgc'} -ml $pdf{'lpf'} ";
 
    # window coefficients
    $type = 'mgc';
@@ -697,6 +752,9 @@ if ($ENGIN) {
    for ( $d = 1 ; $d <= $nwin{$type} ; $d++ ) {
       $hts_engine .= "-df $voice/$win{$type}[$d-1] ";
    }
+   $type = 'lpf';
+   $d    = 1;
+   $hts_engine .= "-dl $voice/$win{$type}[$d-1] ";
 
    # control parameters (sampling rate, frame shift, frequency warping, etc.)
    $lgopt = "-l" if ($lg);
@@ -740,7 +798,6 @@ if ($SEMIT) {
 
    $opt = "-C $cfg{'stc'} -K $model{'cmp'} stc -u smvdmv";
 
-   make_config();
    make_stc_base();
 
    shell("$HERest{'ful'} -H $stcmmf{'cmp'} -N $stcmmf{'dur'} -M $model{'cmp'} -R $model{'dur'} $opt $lst{'ful'} $lst{'ful'}");
@@ -1025,15 +1082,48 @@ sub make_proto {
    print PROTO "<EndHMM>\n";
 
    close(PROTO);
+}
+
+sub make_duration_vfloor {
+   my ( $dm, $dv ) = @_;
+   my ( $i, $j );
 
    # output variance flooring macro for duration model
    open( VF, ">$vfloors{'dur'}" ) || die "Cannot open $!";
    for ( $i = 1 ; $i <= $nState ; $i++ ) {
       print VF "~v varFloor$i\n";
       print VF "<Variance> 1\n";
-      print VF " 1.0\n";
+      $j = $dv * $vflr{'dur'};
+      print VF " $j\n";
    }
    close(VF);
+
+   # output average model for duration model
+   open( MMF, ">$avermmf{'dur'}" ) || die "Cannot open $!";
+   print MMF "~o\n";
+   print MMF "<STREAMINFO> $nState";
+   for ( $i = 1 ; $i <= $nState ; $i++ ) {
+      print MMF " 1";
+   }
+   print MMF "\n";
+   print MMF "<VECSIZE> 5<NULLD><USER><DIAGC>\n";
+   print MMF "~h \"$avermmf{'dur'}\"\n";
+   print MMF "<BEGINHMM>\n";
+   print MMF "<NUMSTATES> 3\n";
+   print MMF "<STATE> 2\n";
+   for ( $i = 1 ; $i <= $nState ; $i++ ) {
+      print MMF "<STREAM> $i\n";
+      print MMF "<MEAN> 1\n";
+      print MMF " $dm\n";
+      print MMF "<VARIANCE> 1\n";
+      print MMF " $dv\n";
+   }
+   print MMF "<TRANSP> 3\n";
+   print MMF " 0.0 1.0 0.0\n";
+   print MMF " 0.0 0.0 1.0\n";
+   print MMF " 0.0 0.0 0.0\n";
+   print MMF "<ENDHMM>\n";
+   close(MMF);
 }
 
 # sub routine for generating proto-type model for GV
@@ -1180,14 +1270,14 @@ sub make_data_gv {
    close(MLF);
 }
 
-# sub routine to copy init.mmf to full.mmf for GV
-sub copy_init2full_gv {
+# sub routine to copy average.mmf to full.mmf for GV
+sub copy_aver2full_gv {
    my ( $find, $head, $tail, $str );
 
    $find = 0;
    $head = "";
    $tail = "";
-   open( MMF, "$initmmf{'gv'}" ) || die "Cannot open $!";
+   open( MMF, "$avermmf{'gv'}" ) || die "Cannot open $!";
    while ( $str = <MMF> ) {
       if ( index( $str, "~h" ) >= 0 ) {
          $find = 1;
@@ -1213,7 +1303,7 @@ sub copy_init2full_gv {
    close(LST);
 }
 
-sub copy_init2clus_gv {
+sub copy_aver2clus_gv {
    my ( $find, $head, $mid, $tail, $str, $tmp, $s, @pdfs );
 
    # initaialize
@@ -1228,7 +1318,7 @@ sub copy_init2clus_gv {
    }
 
    # load
-   open( MMF, "$initmmf{'gv'}" ) || die "Cannot open $!";
+   open( MMF, "$avermmf{'gv'}" ) || die "Cannot open $!";
    while ( $str = <MMF> ) {
       if ( index( $str, "~h" ) >= 0 ) {
          $head .= `cat $gvdir/vFloors`;
@@ -1349,7 +1439,7 @@ sub make_stc_base {
 
 # sub routine for generating config files
 sub make_config {
-   my ( $s, $type, @boolstring );
+   my ( $s, $type, @boolstring, $b, $bSize );
    $boolstring[0] = 'FALSE';
    $boolstring[1] = 'TRUE';
 
@@ -1358,7 +1448,6 @@ sub make_config {
    print CONF "APPLYVFLOOR = T\n";
    print CONF "NATURALREADORDER = T\n";
    print CONF "NATURALWRITEORDER = T\n";
-   print CONF "MINLEAFOCC = $minocc\n";
    print CONF "VFLOORSCALESTR = \"Vector $nstream{'total'}";
    foreach $type (@cmp) {
       for ( $s = $strb{$type} ; $s <= $stre{$type} ; $s++ ) {
@@ -1378,6 +1467,18 @@ sub make_config {
    print CONF "DURVARFLOORPERCENTILE = 0.0\n";
    print CONF "APPLYDURVARFLOOR = F\n";
    close(CONF);
+
+   # config file for model tying
+   foreach $type (@cmp) {
+      open( CONF, ">$cfg{$type}" ) || die "Cannot open $!";
+      print CONF "MINLEAFOCC = $mocc{$type}\n";
+      close(CONF);
+   }
+   foreach $type (@dur) {
+      open( CONF, ">$cfg{$type}" ) || die "Cannot open $!";
+      print CONF "MINLEAFOCC = $mocc{$type}\n";
+      close(CONF);
+   }
 
    # config file for STC
    open( CONF, ">$cfg{'stc'}" ) || die "Cannot open $!";
@@ -1778,11 +1879,10 @@ sub postfiltering($$) {
 # sub routine for speech synthesis from log f0 and Mel-cepstral coefficients
 sub gen_wave($) {
    my ($gendir) = @_;
-   my ( $line, @FILE, $num, $period, $file, $base, $T, $endian );
+   my ( $line, @FILE, $file, $base, $T );
 
    $line  = `ls $gendir/*.mgc`;
    @FILE  = split( '\n', $line );
-   $num   = @FILE;
    $lgopt = "-l" if ($lg);
 
    print "Processing directory $gendir:\n";
@@ -1791,12 +1891,6 @@ sub gen_wave($) {
    open( SYN, ">$datdir/scripts/synthesis.m" ) || die "Cannot open $!";
    printf SYN "path(path,'%s');\n",                   ${STRAIGHT};
    printf SYN "prm.spectralUpdateInterval = %f;\n\n", 1000.0 * $fs / $sr;
-   if ( $bs == 0 ) {
-      $endian = "ieee-le";
-   }
-   else {
-      $endian = "ieee-be";
-   }
 
    foreach $file (@FILE) {
       $base = `basename $file .mgc`;
@@ -1839,26 +1933,70 @@ sub gen_wave($) {
 
          # convert band-aperiodicity to aperiodicity
          $bap = "$gendir/$base.bap";
-         shell("$BCP +f -l 5 -L 1 -s 0 -e 0 -S 0 $bap | ${DFS} -b 1 -1 | ${INTERPOLATE} -p  64 | ${DFS} -a 1 -1 > $gendir/$base.ap1");
-         shell("$BCP +f -l 5 -L 1 -s 1 -e 1 -S 0 $bap | ${DFS} -b 1 -1 | ${INTERPOLATE} -p  64 | ${DFS} -a 1 -1 > $gendir/$base.ap2");
-         shell("$BCP +f -l 5 -L 1 -s 2 -e 2 -S 0 $bap | ${DFS} -b 1 -1 | ${INTERPOLATE} -p 128 | ${DFS} -a 1 -1 > $gendir/$base.ap3");
-         shell("$BCP +f -l 5 -L 1 -s 3 -e 3 -S 0 $bap | ${DFS} -b 1 -1 | ${INTERPOLATE} -p 128 | ${DFS} -a 1 -1 > $gendir/$base.ap4");
-         shell("$BCP +f -l 5 -L 1 -s 4 -e 4 -S 0 $bap | ${DFS} -b 1 -1 | ${INTERPOLATE} -p 129 | ${DFS} -a 1 -1 > $gendir/$base.ap5");
 
-         $line = "$MERGE  -s   0 -l  64 -L  64 $gendir/$base.ap1 $gendir/$base.ap2 | ";
-         $line .= "$MERGE -s 128 -l 128 -L 128 $gendir/$base.ap3 | ";
-         $line .= "$MERGE -s 256 -l 256 -L 128 $gendir/$base.ap4 | ";
-         $line .= "$MERGE -s 384 -l 384 -L 129 $gendir/$base.ap5 > $gendir/$base.ap";
+         shell("$BCP +f -l 26 -L 1 -s  0 -e  0 -S 0 $bap | ${DFS} -b 1 -1 | ${INTERPOLATE} -p   2 | ${DFS} -a 1 -1 > $gendir/$base.ap01");
+         shell("$BCP +f -l 26 -L 1 -s  1 -e  1 -S 0 $bap | ${DFS} -b 1 -1 | ${INTERPOLATE} -p   3 | ${DFS} -a 1 -1 > $gendir/$base.ap02");
+         shell("$BCP +f -l 26 -L 1 -s  2 -e  2 -S 0 $bap | ${DFS} -b 1 -1 | ${INTERPOLATE} -p   4 | ${DFS} -a 1 -1 > $gendir/$base.ap03");
+         shell("$BCP +f -l 26 -L 1 -s  3 -e  3 -S 0 $bap | ${DFS} -b 1 -1 | ${INTERPOLATE} -p   4 | ${DFS} -a 1 -1 > $gendir/$base.ap04");
+         shell("$BCP +f -l 26 -L 1 -s  4 -e  4 -S 0 $bap | ${DFS} -b 1 -1 | ${INTERPOLATE} -p   4 | ${DFS} -a 1 -1 > $gendir/$base.ap05");
+         shell("$BCP +f -l 26 -L 1 -s  5 -e  5 -S 0 $bap | ${DFS} -b 1 -1 | ${INTERPOLATE} -p   5 | ${DFS} -a 1 -1 > $gendir/$base.ap06");
+         shell("$BCP +f -l 26 -L 1 -s  6 -e  6 -S 0 $bap | ${DFS} -b 1 -1 | ${INTERPOLATE} -p   5 | ${DFS} -a 1 -1 > $gendir/$base.ap07");
+         shell("$BCP +f -l 26 -L 1 -s  7 -e  7 -S 0 $bap | ${DFS} -b 1 -1 | ${INTERPOLATE} -p   6 | ${DFS} -a 1 -1 > $gendir/$base.ap08");
+         shell("$BCP +f -l 26 -L 1 -s  8 -e  8 -S 0 $bap | ${DFS} -b 1 -1 | ${INTERPOLATE} -p   6 | ${DFS} -a 1 -1 > $gendir/$base.ap09");
+         shell("$BCP +f -l 26 -L 1 -s  9 -e  9 -S 0 $bap | ${DFS} -b 1 -1 | ${INTERPOLATE} -p   7 | ${DFS} -a 1 -1 > $gendir/$base.ap10");
+         shell("$BCP +f -l 26 -L 1 -s 10 -e 10 -S 0 $bap | ${DFS} -b 1 -1 | ${INTERPOLATE} -p   8 | ${DFS} -a 1 -1 > $gendir/$base.ap11");
+         shell("$BCP +f -l 26 -L 1 -s 11 -e 11 -S 0 $bap | ${DFS} -b 1 -1 | ${INTERPOLATE} -p   9 | ${DFS} -a 1 -1 > $gendir/$base.ap12");
+         shell("$BCP +f -l 26 -L 1 -s 12 -e 12 -S 0 $bap | ${DFS} -b 1 -1 | ${INTERPOLATE} -p  10 | ${DFS} -a 1 -1 > $gendir/$base.ap13");
+         shell("$BCP +f -l 26 -L 1 -s 13 -e 13 -S 0 $bap | ${DFS} -b 1 -1 | ${INTERPOLATE} -p  12 | ${DFS} -a 1 -1 > $gendir/$base.ap14");
+         shell("$BCP +f -l 26 -L 1 -s 14 -e 14 -S 0 $bap | ${DFS} -b 1 -1 | ${INTERPOLATE} -p  14 | ${DFS} -a 1 -1 > $gendir/$base.ap15");
+         shell("$BCP +f -l 26 -L 1 -s 15 -e 15 -S 0 $bap | ${DFS} -b 1 -1 | ${INTERPOLATE} -p  16 | ${DFS} -a 1 -1 > $gendir/$base.ap16");
+         shell("$BCP +f -l 26 -L 1 -s 16 -e 16 -S 0 $bap | ${DFS} -b 1 -1 | ${INTERPOLATE} -p  19 | ${DFS} -a 1 -1 > $gendir/$base.ap17");
+         shell("$BCP +f -l 26 -L 1 -s 17 -e 17 -S 0 $bap | ${DFS} -b 1 -1 | ${INTERPOLATE} -p  24 | ${DFS} -a 1 -1 > $gendir/$base.ap18");
+         shell("$BCP +f -l 26 -L 1 -s 18 -e 18 -S 0 $bap | ${DFS} -b 1 -1 | ${INTERPOLATE} -p  29 | ${DFS} -a 1 -1 > $gendir/$base.ap19");
+         shell("$BCP +f -l 26 -L 1 -s 19 -e 19 -S 0 $bap | ${DFS} -b 1 -1 | ${INTERPOLATE} -p  37 | ${DFS} -a 1 -1 > $gendir/$base.ap20");
+         shell("$BCP +f -l 26 -L 1 -s 20 -e 20 -S 0 $bap | ${DFS} -b 1 -1 | ${INTERPOLATE} -p  49 | ${DFS} -a 1 -1 > $gendir/$base.ap21");
+         shell("$BCP +f -l 26 -L 1 -s 21 -e 21 -S 0 $bap | ${DFS} -b 1 -1 | ${INTERPOLATE} -p  68 | ${DFS} -a 1 -1 > $gendir/$base.ap22");
+         shell("$BCP +f -l 26 -L 1 -s 22 -e 22 -S 0 $bap | ${DFS} -b 1 -1 | ${INTERPOLATE} -p  99 | ${DFS} -a 1 -1 > $gendir/$base.ap23");
+         shell("$BCP +f -l 26 -L 1 -s 23 -e 23 -S 0 $bap | ${DFS} -b 1 -1 | ${INTERPOLATE} -p 160 | ${DFS} -a 1 -1 > $gendir/$base.ap24");
+         shell("$BCP +f -l 26 -L 1 -s 24 -e 24 -S 0 $bap | ${DFS} -b 1 -1 | ${INTERPOLATE} -p 300 | ${DFS} -a 1 -1 > $gendir/$base.ap25");
+         shell("$BCP +f -l 26 -L 1 -s 25 -e 25 -S 0 $bap | ${DFS} -b 1 -1 | ${INTERPOLATE} -p 125 | ${DFS} -a 1 -1 > $gendir/$base.ap26");
+
+         $line = "cat                         $gendir/$base.ap01 | ";
+         $line .= "$MERGE -s   2 -l   2 -L   3 $gendir/$base.ap02 | ";
+         $line .= "$MERGE -s   5 -l   5 -L   4 $gendir/$base.ap03 | ";
+         $line .= "$MERGE -s   9 -l   9 -L   4 $gendir/$base.ap04 | ";
+         $line .= "$MERGE -s  13 -l  13 -L   4 $gendir/$base.ap05 | ";
+         $line .= "$MERGE -s  17 -l  17 -L   5 $gendir/$base.ap06 | ";
+         $line .= "$MERGE -s  22 -l  22 -L   5 $gendir/$base.ap07 | ";
+         $line .= "$MERGE -s  27 -l  27 -L   6 $gendir/$base.ap08 | ";
+         $line .= "$MERGE -s  33 -l  33 -L   6 $gendir/$base.ap09 | ";
+         $line .= "$MERGE -s  39 -l  39 -L   7 $gendir/$base.ap10 | ";
+         $line .= "$MERGE -s  46 -l  46 -L   8 $gendir/$base.ap11 | ";
+         $line .= "$MERGE -s  54 -l  54 -L   9 $gendir/$base.ap12 | ";
+         $line .= "$MERGE -s  63 -l  63 -L  10 $gendir/$base.ap13 | ";
+         $line .= "$MERGE -s  73 -l  73 -L  12 $gendir/$base.ap14 | ";
+         $line .= "$MERGE -s  85 -l  85 -L  14 $gendir/$base.ap15 | ";
+         $line .= "$MERGE -s  99 -l  99 -L  16 $gendir/$base.ap16 | ";
+         $line .= "$MERGE -s 115 -l 115 -L  19 $gendir/$base.ap17 | ";
+         $line .= "$MERGE -s 134 -l 134 -L  24 $gendir/$base.ap18 | ";
+         $line .= "$MERGE -s 158 -l 158 -L  29 $gendir/$base.ap19 | ";
+         $line .= "$MERGE -s 187 -l 187 -L  37 $gendir/$base.ap20 | ";
+         $line .= "$MERGE -s 224 -l 224 -L  49 $gendir/$base.ap21 | ";
+         $line .= "$MERGE -s 273 -l 273 -L  68 $gendir/$base.ap22 | ";
+         $line .= "$MERGE -s 341 -l 341 -L  99 $gendir/$base.ap23 | ";
+         $line .= "$MERGE -s 440 -l 440 -L 160 $gendir/$base.ap24 | ";
+         $line .= "$MERGE -s 600 -l 600 -L 300 $gendir/$base.ap25 | ";
+         $line .= "$MERGE -s 900 -l 900 -L 125 $gendir/$base.ap26 > $gendir/$base.ap";
          shell($line);
 
          printf SYN "fprintf(1,'Synthesizing %s');\n", "$gendir/$base.wav";
-         printf SYN "fid1 = fopen('%s','r','%s');\n",  "$gendir/$base.sp", $endian;
-         printf SYN "fid2 = fopen('%s','r','%s');\n",  "$gendir/$base.ap", $endian;
-         printf SYN "fid3 = fopen('%s','r','%s');\n",  "$gendir/$base.f0", $endian;
+         printf SYN "fid1 = fopen('%s','r','%s');\n",  "$gendir/$base.sp", "ieee-le";
+         printf SYN "fid2 = fopen('%s','r','%s');\n",  "$gendir/$base.ap", "ieee-le";
+         printf SYN "fid3 = fopen('%s','r','%s');\n",  "$gendir/$base.f0", "ieee-le";
 
-         printf SYN "sp = fread(fid1,[%d, %d],'float');\n", 513, $T;
-         printf SYN "ap = fread(fid2,[%d, %d],'float');\n", 513, $T;
-         printf SYN "f0 = fread(fid3,[%d, %d],'float');\n", 1,   $T;
+         printf SYN "sp = fread(fid1,[%d, %d],'float');\n", 513,  $T;
+         printf SYN "ap = fread(fid2,[%d, %d],'float');\n", 1025, $T;
+         printf SYN "f0 = fread(fid3,[%d, %d],'float');\n", 1,    $T;
 
          print SYN "fclose(fid1);\n";
          print SYN "fclose(fid2);\n";

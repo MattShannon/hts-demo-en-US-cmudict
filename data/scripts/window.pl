@@ -5,7 +5,7 @@
 #           http://hts.sp.nitech.ac.jp/                             #
 # ----------------------------------------------------------------- #
 #                                                                   #
-#  Copyright (c) 2001-2010  Nagoya Institute of Technology          #
+#  Copyright (c) 2001-2011  Nagoya Institute of Technology          #
 #                           Department of Computer Science          #
 #                                                                   #
 #                2001-2008  Tokyo Institute of Technology           #
@@ -89,11 +89,19 @@ for ( $i = 1 ; $i <= $nwin ; $i++ ) {
          # check space boundary (ex. voiced/unvoiced boundary)
          $boundary = 0;
          for ( $k = -$nlr ; $k <= $nlr ; $k++ ) {
-            if ( $win[ $k + $nlr + 1 ] == 0.0 ) {
-               next;
-            }
-            if ( $t + $k >= 0 && $t + $k < $T && $original[ ( $t + $k ) * $dim + $j ] == $ignorevalue ) {
-               $boundary = 1;
+            if ( $win[ $k + $nlr + 1 ] != 0.0 ) {
+               if ( $t + $k < 0 ) {
+                  $l = 0;
+               }
+               elsif ( $t + $k >= $T ) {
+                  $l = $T - 1;
+               }
+               else {
+                  $l = $t + $k;
+               }
+               if ( $original[ $l * $dim + $j ] == $ignorevalue ) {
+                  $boundary = 1;
+               }
             }
          }
          if ( $boundary == 0 ) {
