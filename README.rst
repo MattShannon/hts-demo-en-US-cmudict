@@ -66,7 +66,8 @@ hts-demo-straight-en-US-cmudict depends on the following software packages:
 - `hts_engine API <http://hts-engine.sourceforge.net/>`_
   (if synthesis using HTS engine rather than HTS's HMGenS tool is desired)
 - `STRAIGHT vocoder <http://www.wakayama-u.ac.jp/~kawahara/STRAIGHTadv/index_e.html>`_
-- `MATLAB <www.mathworks.com/products/matlab/>`_ (to run the STRAIGHT vocoder)
+- `MATLAB <http://www.mathworks.com/products/matlab/>`_
+  (to run the STRAIGHT vocoder)
 
 The versions of these software packages required can be found in ``INSTALL``.
 
