@@ -74,7 +74,10 @@ The versions of these software packages required can be found in ``INSTALL``.
 To set-up this directory:
 
 - generate the ``configure`` script from ``configure.ac`` using ``autoconf``
-- follow the instructions for the official version included in ``INSTALL``
+- follow the instructions for the official version included in ``INSTALL``.
+  If you are using a corpus other than the CMU ARCTIC corpus for speaker SLT,
+  you may wish to set the LOWERF0, UPPERF0, DATASET and SPEAKER variables when
+  running ``configure``.
 
 Bugs
 ----
