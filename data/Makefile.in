@@ -47,48 +47,46 @@ SPEAKER = @SPEAKER@
 DATASET = @DATASET@
 
 # awk and perl
-AWK   = @AWK@
-PERL  = @PERL@
+AWK  = @AWK@
+PERL = @PERL@
 
 # SPTK commands
 X2X     = @X2X@
 MGCEP   = @MGCEP@
 LPC2LSP = @LPC2LSP@
-BCP     = @BCP@
-AVERAGE = @AVERAGE@
 MERGE   = @MERGE@
 VSTAT   = @VSTAT@
+SOPR    = @SOPR@
 NAN     = @NAN@
 MINMAX  = @MINMAX@
+RAW2WAV = @RAW2WAV@
 
 # MATLAB and STRAIGHT
 MATLAB   = @MATLAB@
 STRAIGHT = @STRAIGHT@
+STRMAGIC = 72089600   # magic number for turning off normalization (72089600 = 2200 * 32768)
 
 # dumpfeats to extract utterance information
 DUMPFEATS = @DUMPFEATS@
 
-# SOX to convert raw audio to RIFF wav
-SOX       = @SOX@
-SOXOPTION = @SOXOPTION@
-
 # speech analysis conditions
-SAMPFREQ    = @SAMPFREQ@   # Sampling frequency (48kHz)
-FRAMESHIFT  = @FRAMESHIFT@ # Frame shift in point (240 = 48000 * 0.005)
-FREQWARP    = @FREQWARP@   # frequency warping factor
-GAMMA       = @GAMMA@      # pole/zero weight for mel-generalized cepstral (MGC) analysis
-MGCORDER    = @MGCORDER@   # order of MGC analysis
-LNGAIN      = @LNGAIN@     # use logarithmic gain rather than linear gain
-LOWERF0     = @LOWERF0@    # lower limit for f0 extraction (Hz)
-UPPERF0     = @UPPERF0@    # upper limit for f0 extraction (Hz)
+SAMPFREQ   = @SAMPFREQ@   # Sampling frequency (48kHz)
+FRAMESHIFT = @FRAMESHIFT@ # Frame shift in point (240 = 48000 * 0.005)
+FREQWARP   = @FREQWARP@   # frequency warping factor
+GAMMA      = @GAMMA@      # pole/zero weight for mel-generalized cepstral (MGC) analysis
+MGCORDER   = @MGCORDER@   # order of MGC analysis
+BAPORDER   = @BAPORDER@   # order of BAP analysis
+LNGAIN     = @LNGAIN@     # use logarithmic gain rather than linear gain
+LOWERF0    = @LOWERF0@    # lower limit for f0 extraction (Hz)
+UPPERF0    = @UPPERF0@    # upper limit for f0 extraction (Hz)
 
 # windows for calculating delta features
-MGCWIN      = win/mgc.win
-LF0WIN      = win/lf0.win
-BAPWIN      = win/bap.win
-NMGCWIN     = @NMGCWIN@
-NLF0WIN     = @NLF0WIN@
-NBAPWIN     = @NBAPWIN@
+MGCWIN   = win/mgc.win
+LF0WIN   = win/lf0.win
+BAPWIN   = win/bap.win
+NMGCWIN  = @NMGCWIN@
+NLF0WIN  = @NLF0WIN@
+NBAPWIN  = @NBAPWIN@
 
 all: analysis labels
 
@@ -99,30 +97,33 @@ labels: label mlf list scp
 straight:
 	# Extracting f0, aperiodicity, and spectra using STRAIGHT
 	mkdir -p wav sp ap f0
-	frameshift=`expr 1000 \* $(FRAMESHIFT) / $(SAMPFREQ)`; \
+
+	FRAMESHIFTMS=`echo $(FRAMESHIFT) | $(X2X) +af | $(SOPR) -m 1000 -d $(SAMPFREQ) | $(X2X) +fa`; \
 	echo "path(path,'$(STRAIGHT)');"                      >  scripts/extract.m; \
-	echo "prm.F0frameUpdateInterval=$${frameshift};"      >> scripts/extract.m; \
+	echo "prm.F0frameUpdateInterval=$${FRAMESHIFTMS};"    >> scripts/extract.m; \
 	echo "prm.F0searchUpperBound=$(UPPERF0);"             >> scripts/extract.m; \
 	echo "prm.F0searchLowerBound=$(LOWERF0);"             >> scripts/extract.m; \
-	echo "prm.spectralUpdateInterval=$${frameshift};"     >> scripts/extract.m; \
+	echo "prm.spectralUpdateInterval=$${FRAMESHIFTMS};"   >> scripts/extract.m; \
 	echo ""                                               >> scripts/extract.m
 	for raw in raw/$(DATASET)_$(SPEAKER)_*.raw; do \
 		base=`basename $${raw} .raw`; \
 		min=`$(X2X) +sf $${raw} | $(MINMAX) | $(X2X) +fa | head -n 1`; \
 		max=`$(X2X) +sf $${raw} | $(MINMAX) | $(X2X) +fa | tail -n 1`; \
+		rate=`$(X2X) +sf $${raw} | $(VSTAT) -d -o 2 | $(SOPR) -SQRT -INV -m $(STRMAGIC) | $(X2X) +fa`; \
 		if [ -s $${raw} -a $${min} -gt -32768 -a $${max} -lt 32767 ]; then \
 			wav=wav/$${base}.wav; \
 			f0=f0/$${base}.f0; \
 			ap=ap/$${base}.ap; \
 			sp=sp/$${base}.sp; \
 			echo -n "Converting $${raw} to $${wav} and generating MATLAB script..."; \
-			$(SOX) -c 1 -s -$(SOXOPTION) -t raw -r $(SAMPFREQ) $${raw} -c 1 -s -$(SOXOPTION) -t wav -r $(SAMPFREQ) $${wav}; \
+			$(RAW2WAV) -s $(SAMPFREQ) -d wav $${raw}; \
 			echo "fprintf(1,'Processing $${wav}\n');"     >> scripts/extract.m; \
 			echo "[x,fs]=wavread('$${wav}');"             >> scripts/extract.m; \
 			echo "[f0, ap] = exstraightsource(x,fs,prm);" >> scripts/extract.m; \
 			echo "[sp] = exstraightspec(x, f0, fs, prm);" >> scripts/extract.m; \
 			echo "ap = ap';"                              >> scripts/extract.m; \
 			echo "sp = sp';"                              >> scripts/extract.m; \
+			echo "sp = sp*$${rate};"                      >> scripts/extract.m; \
 			echo "save '$${f0}' f0 -ascii;"               >> scripts/extract.m; \
 			echo "save '$${ap}' ap -ascii;"               >> scripts/extract.m; \
 			echo "save '$${sp}' sp -ascii;"               >> scripts/extract.m; \
@@ -137,6 +138,8 @@ straight:
 mgc:
 	# Extracting MGC or MGC-LSP coefficients from STRAIGHT spectra
 	mkdir -p mgc
+
+	SAMPKHZ=`echo $(SAMPFREQ) | $(X2X) +af | $(SOPR) -m 0.001 | $(X2X) +fa`; \
 	for sp in sp/$(DATASET)_$(SPEAKER)_*.sp; do \
 		base=`basename $${sp} .sp`; \
 		if [ -s $${sp} ]; then \
@@ -146,7 +149,6 @@ mgc:
 				$(MGCEP) -a $(FREQWARP) -m $(MGCORDER) -l 2048 -e 1.0E-08 -j 0 -f 0.0 -q 3 > mgc/$${base}.mgc; \
 			else \
 				echo "Extracting MGC-LSP coefficients from $${sp}"; \
-				SAMPKHZ=`expr $(SAMPFREQ) / 1000`; \
 				if [ $(LNGAIN) -eq 1 ]; then \
 					GAINOPT="-l"; \
 				fi; \
@@ -166,12 +168,12 @@ mgc:
 lf0:
 	# Converting f0 to log f0
 	mkdir -p lf0
+
 	for f0 in f0/$(DATASET)_$(SPEAKER)_*.f0; do \
 		base=`basename $${f0} .f0`; \
 		if [ -s $${f0} ]; then \
 			echo "Converting F0 file $${f0} to log F0 file lf0/$${base}.lf0"; \
-			$(X2X) +af $${f0} > tmp; \
-			$(PERL) scripts/freq2lfreq.pl tmp > lf0/$${base}.lf0; \
+			$(X2X) +af $${f0} | $(SOPR) -magic 0.0 -LN -MAGIC -1.0E+10 > lf0/$${base}.lf0; \
 			if [ -n "`$(NAN) lf0/$${base}.lf0`" ]; then \
 				echo " Failed to extract $${f0}"; \
 				rm -f lf0/$${base}.lf0; \
@@ -183,68 +185,18 @@ lf0:
 bap:
 	# Converting aperiodicity to band aperiodicity
 	mkdir -p bap
+
 	for ap in ap/$(DATASET)_$(SPEAKER)_*.ap; do \
 		base=`basename $${ap} .ap`; \
 		if [ -s $${ap} ]; then \
 			echo "Converting aperiodicity file $${ap} to band aperiodicity file bap/$${base}.bap"; \
-			$(X2X) +af $${ap} | $(BCP) +f -n 1024 -L   2 -s   0 -e    1 -S 0 | $(AVERAGE) -l   2 > bap01; \
-			$(X2X) +af $${ap} | $(BCP) +f -n 1024 -L   3 -s   2 -e    4 -S 0 | $(AVERAGE) -l   3 > bap02; \
-			$(X2X) +af $${ap} | $(BCP) +f -n 1024 -L   4 -s   5 -e    8 -S 0 | $(AVERAGE) -l   4 > bap03; \
-			$(X2X) +af $${ap} | $(BCP) +f -n 1024 -L   4 -s   9 -e   12 -S 0 | $(AVERAGE) -l   4 > bap04; \
-			$(X2X) +af $${ap} | $(BCP) +f -n 1024 -L   4 -s  13 -e   16 -S 0 | $(AVERAGE) -l   4 > bap05; \
-			$(X2X) +af $${ap} | $(BCP) +f -n 1024 -L   5 -s  17 -e   21 -S 0 | $(AVERAGE) -l   5 > bap06; \
-			$(X2X) +af $${ap} | $(BCP) +f -n 1024 -L   5 -s  22 -e   26 -S 0 | $(AVERAGE) -l   5 > bap07; \
-			$(X2X) +af $${ap} | $(BCP) +f -n 1024 -L   6 -s  27 -e   32 -S 0 | $(AVERAGE) -l   6 > bap08; \
-			$(X2X) +af $${ap} | $(BCP) +f -n 1024 -L   6 -s  33 -e   38 -S 0 | $(AVERAGE) -l   6 > bap09; \
-			$(X2X) +af $${ap} | $(BCP) +f -n 1024 -L   7 -s  39 -e   45 -S 0 | $(AVERAGE) -l   7 > bap10; \
-			$(X2X) +af $${ap} | $(BCP) +f -n 1024 -L   8 -s  46 -e   53 -S 0 | $(AVERAGE) -l   8 > bap11; \
-			$(X2X) +af $${ap} | $(BCP) +f -n 1024 -L   9 -s  54 -e   62 -S 0 | $(AVERAGE) -l   9 > bap12; \
-			$(X2X) +af $${ap} | $(BCP) +f -n 1024 -L  10 -s  63 -e   72 -S 0 | $(AVERAGE) -l  10 > bap13; \
-			$(X2X) +af $${ap} | $(BCP) +f -n 1024 -L  12 -s  73 -e   84 -S 0 | $(AVERAGE) -l  12 > bap14; \
-			$(X2X) +af $${ap} | $(BCP) +f -n 1024 -L  14 -s  85 -e   98 -S 0 | $(AVERAGE) -l  14 > bap15; \
-			$(X2X) +af $${ap} | $(BCP) +f -n 1024 -L  16 -s  99 -e  114 -S 0 | $(AVERAGE) -l  16 > bap16; \
-			$(X2X) +af $${ap} | $(BCP) +f -n 1024 -L  19 -s 115 -e  133 -S 0 | $(AVERAGE) -l  19 > bap17; \
-			$(X2X) +af $${ap} | $(BCP) +f -n 1024 -L  24 -s 134 -e  157 -S 0 | $(AVERAGE) -l  24 > bap18; \
-			$(X2X) +af $${ap} | $(BCP) +f -n 1024 -L  29 -s 158 -e  186 -S 0 | $(AVERAGE) -l  29 > bap19; \
-			$(X2X) +af $${ap} | $(BCP) +f -n 1024 -L  37 -s 187 -e  223 -S 0 | $(AVERAGE) -l  37 > bap20; \
-			$(X2X) +af $${ap} | $(BCP) +f -n 1024 -L  49 -s 224 -e  272 -S 0 | $(AVERAGE) -l  49 > bap21; \
-			$(X2X) +af $${ap} | $(BCP) +f -n 1024 -L  68 -s 273 -e  340 -S 0 | $(AVERAGE) -l  68 > bap22; \
-			$(X2X) +af $${ap} | $(BCP) +f -n 1024 -L  99 -s 341 -e  439 -S 0 | $(AVERAGE) -l  99 > bap23; \
-			$(X2X) +af $${ap} | $(BCP) +f -n 1024 -L 160 -s 440 -e  599 -S 0 | $(AVERAGE) -l 160 > bap24; \
-			$(X2X) +af $${ap} | $(BCP) +f -n 1024 -L 300 -s 600 -e  899 -S 0 | $(AVERAGE) -l 300 > bap25; \
-			$(X2X) +af $${ap} | $(BCP) +f -n 1024 -L 125 -s 900 -e 1024 -S 0 | $(AVERAGE) -l 125 > bap26; \
-			$(MERGE) -s  0 -l  1 -L 1 bap01 bap02 | \
-			$(MERGE) -s  2 -l  2 -L 1 bap03 | \
-			$(MERGE) -s  3 -l  3 -L 1 bap04 | \
-			$(MERGE) -s  4 -l  4 -L 1 bap05 | \
-			$(MERGE) -s  5 -l  5 -L 1 bap06 | \
-			$(MERGE) -s  6 -l  6 -L 1 bap07 | \
-			$(MERGE) -s  7 -l  7 -L 1 bap08 | \
-			$(MERGE) -s  8 -l  8 -L 1 bap09 | \
-			$(MERGE) -s  9 -l  9 -L 1 bap10 | \
-			$(MERGE) -s 10 -l 10 -L 1 bap11 | \
-			$(MERGE) -s 11 -l 11 -L 1 bap12 | \
-			$(MERGE) -s 12 -l 12 -L 1 bap13 | \
-			$(MERGE) -s 13 -l 13 -L 1 bap14 | \
-			$(MERGE) -s 14 -l 14 -L 1 bap15 | \
-			$(MERGE) -s 15 -l 15 -L 1 bap16 | \
-			$(MERGE) -s 16 -l 16 -L 1 bap17 | \
-			$(MERGE) -s 17 -l 17 -L 1 bap18 | \
-			$(MERGE) -s 18 -l 18 -L 1 bap19 | \
-			$(MERGE) -s 19 -l 19 -L 1 bap20 | \
-			$(MERGE) -s 20 -l 20 -L 1 bap21 | \
-			$(MERGE) -s 21 -l 21 -L 1 bap22 | \
-			$(MERGE) -s 22 -l 22 -L 1 bap23 | \
-			$(MERGE) -s 23 -l 23 -L 1 bap24 | \
-			$(MERGE) -s 24 -l 24 -L 1 bap25 | \
-			$(MERGE) -s 25 -l 25 -L 1 bap26 > bap/$${base}.bap; \
+			$(X2X) +af $${ap} | $(MGCEP) -a $(FREQWARP) -m $(BAPORDER) -l 2048 -e 1.0E-08 -j 0 -f 0.0 -q 1 > bap/$${base}.bap; \
 			if [ -n "`$(NAN) bap/$${base}.bap`" ]; then \
 				echo " Failed to extract aperiodicity coefficients $${ap}"; \
 				rm -f bap/$${base}.bap; \
 			fi; \
 		fi; \
 	done
-	rm -f bap{01,02,03,04,05,06,07,08,09,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26}
 
 cmp: 
 	# Composing training data files from mgc and lf0 files
@@ -253,7 +205,7 @@ cmp:
 	for j in 1; do \
 		MGCDIM=`expr $(MGCORDER) + 1`; \
 		LF0DIM=1; \
-		BAPDIM=26; \
+		BAPDIM=`expr $(BAPORDER) + 1`; \
 		MGCWINDIM=`expr $(NMGCWIN) \* $${MGCDIM}`; \
 		LF0WINDIM=`expr $(NLF0WIN) \* $${LF0DIM}`; \
 		BAPWINDIM=`expr $(NBAPWIN) \* $${BAPDIM}`; \
@@ -413,4 +365,4 @@ clean-scp:
 distclean: clean
 	rm -f Makefile
 
-.PHONY: all analysis labels mgc lf0 bap f0 wav sp ap cmp label mlf list scp clean
+.PHONY: all analysis labels mgc lf0 bap f0 cmp label mlf list scp clean

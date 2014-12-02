@@ -1,6 +1,6 @@
 # Process this file with autoconf to produce a configure script.
-AC_INIT(HTS-demo_CMU-ARCTIC-SLT_STRAIGHT,2.2,hts-users@sp.nitech.ac.jp)
-AC_COPYRIGHT(Copyright 2001-2011 Nagoya Institute of Technology)
+AC_INIT(HTS-demo_CMU-ARCTIC-SLT_STRAIGHT,2.3 alpha,hts-users@sp.nitech.ac.jp)
+AC_COPYRIGHT(Copyright 2001-2012 Nagoya Institute of Technology)
 AC_COPYRIGHT(Copyright 2001-2008 Tokyo Institute of Technology)
 
 
@@ -9,20 +9,10 @@ AC_COPYRIGHT(Copyright 2001-2008 Tokyo Institute of Technology)
 # awk
 AC_PROG_AWK
 
-
-
 # perl
 AC_PATH_PROG([PERL], [perl], [/usr/bin], [$PATH:/usr/bin])
 if test ! -f "$PERL"; then
 	AC_MSG_ERROR(Can't find perl)
-fi
-
-
-
-# bc
-AC_PATH_PROG([BC], [bc], [/usr/bin], [$PATH:/usr/bin])
-if test ! -f "$BC"; then
-	AC_MSG_ERROR(Can't find bc)
 fi
 
 # wc
@@ -119,6 +109,12 @@ if test ! -f "$VOPR"; then
 	AC_MSG_ERROR(Can't find vopr of SPTK)
 fi
 
+# vsum
+AC_PATH_PROG([VSUM], [vsum], [:], [${sptk_search_path}:$PATH])
+if test ! -f "$VSUM"; then
+	AC_MSG_ERROR(Can't find vsum of SPTK)
+fi
+
 # freqt
 AC_PATH_PROG([FREQT], [freqt], [:], [${sptk_search_path}:$PATH])
 if test ! -f "$FREQT"; then
@@ -147,12 +143,6 @@ fi
 AC_PATH_PROG([MERGE], [merge], [:], [${sptk_search_path}:$PATH])
 if test ! -f "$MERGE"; then
 	AC_MSG_ERROR(Can't find merge of SPTK)
-fi
-
-# average
-AC_PATH_PROG([AVERAGE], [average], [:], [${sptk_search_path}:$PATH])
-if test ! -f "$AVERAGE"; then
-	AC_MSG_ERROR(Can't find average of SPTK)
 fi
 
 # bcp
@@ -185,48 +175,17 @@ if test ! -f "$MGC2SP"; then
 	AC_MSG_ERROR(Can't find mgc2sp of SPTK)
 fi
 
-# interpolate
-AC_PATH_PROG([INTERPOLATE], [interpolate], [:], [${sptk_search_path}:$PATH])
-if test ! -f "$INTERPOLATE"; then
-	AC_MSG_ERROR(Can't find interpolate of SPTK)
-fi
-
-# dfs
-AC_PATH_PROG([DFS], [dfs], [:], [${sptk_search_path}:$PATH])
-if test ! -f "$DFS"; then
-	AC_MSG_ERROR(Can't find dfs of SPTK)
-fi
-
 # minmax
 AC_PATH_PROG([MINMAX], [minmax], [:], [${sptk_search_path}:$PATH])
 if test ! -f "$MINMAX"; then
 	AC_MSG_ERROR(Can't find minmax of SPTK)
 fi
 
-
-
-# sox (Sound eXchange)
-# sox search path
-AC_ARG_WITH(sox-search-path,
-		AS_HELP_STRING([--with-sox-search-path],[specify the additional sox (Sound eXchange) search path]),
-		[sox_search_path=$withval])
-
-# sox
-AC_PATH_PROG([SOX], [sox], [:], [${sox_search_path}:$PATH])
-if test ! -f "$SOX"; then
-	AC_MSG_ERROR(Can't find sox)
+# raw2wav
+AC_PATH_PROG([RAW2WAV], [raw2wav], [:], [${sptk_search_path}:$PATH])
+if test ! -f "$RAW2WAV"; then
+	AC_MSG_ERROR(Can't find raw2wav of SPTK)
 fi
-
-# sox option
-$SOX -h > sox.option 2>&1
-soxversion=`head -1 sox.option | sed -e s/v//g | awk '{printf "%d\n",$NF}'`
-if test $soxversion -gt 13; then
-	SOXOPTION=2
-else
-	SOXOPTION=w
-fi
-rm -f sox.option
-AC_SUBST(SOXOPTION)
 
 
 
@@ -332,20 +291,37 @@ fi
 
 
 
-# speaker and dataset names
-AC_ARG_VAR([SPEAKER],[speaker name (default=slt)])
-AC_ARG_VAR([DATASET],[dataset (default=cmu_us_arctic)])
+# fullcontext label format
+AC_ARG_VAR([FULLCONTEXT_FORMAT],[full context label format (default=HTS_TTS_ENG)])
+AC_ARG_VAR([FULLCONTEXT_VERSION],[version of full context label format (default=1.0)])
 
-if test -z "$SPEAKER"; then
-	SPEAKER=slt
+if test -z "$FULLCONTEXT_FORMAT"; then
+	FULLCONTEXT_FORMAT=HTS_TTS_ENG
 fi
+
+if test -z "$FULLCONTEXT_VERSION"; then
+	FULLCONTEXT_VERSION=1.0
+fi
+
+AC_SUBST(FULLCONTEXT_FORMAT)
+AC_SUBST(FULLCONTEXT_VERSION)
+
+
+
+# speaker and dataset names
+AC_ARG_VAR([DATASET],[dataset (default=cmu_us_arctic)])
+AC_ARG_VAR([SPEAKER],[speaker name (default=slt)])
 
 if test -z "$DATASET"; then
 	DATASET=cmu_us_arctic
 fi
 
-AC_SUBST(SPEAKER)
+if test -z "$SPEAKER"; then
+	SPEAKER=slt
+fi
+
 AC_SUBST(DATASET)
+AC_SUBST(SPEAKER)
 
 
 
@@ -374,15 +350,17 @@ AC_SUBST(PWD)
 # setting of mel-generalized cepstral analysis, F0 extraction, and postfiltering related settings
 # parse command-line arguments
 AC_ARG_VAR([FRAMESHIFT],[Frame shift in point (default=240)])
+AC_ARG_VAR([SAMPFREQ],[Sampling frequency in Hz (default=48000)])
 AC_ARG_VAR([FREQWARP],[Frequency warping factor (default=0.55)])
 AC_ARG_VAR([GAMMA],[Pole/Zero weight factor (0: mel-cepstral analysis  1: LPC analysis  2,3,...,N: mel-generalized cepstral (MGC) analysis) (default=0)])
 AC_ARG_VAR([MGCORDER],[Order of MGC analysis (default=49)])
+AC_ARG_VAR([BAPORDER],[Order of BAP analysis (default=24)])
 AC_ARG_VAR([LNGAIN],[Use logarithmic gain instead of linear gain (default=1)])
 AC_ARG_VAR([LOWERF0],[Lower limit for F0 extraction in Hz (default=110)])
 AC_ARG_VAR([UPPERF0],[Upper limit for F0 extraction in Hz (default=280)])
-AC_ARG_VAR([PSTFILTER],[Postfiltering factor (default=1.4)])
-AC_ARG_VAR([IMPLEN],[Length of impulse response (default=4096)])
-AC_ARG_VAR([SAMPFREQ],[Sampling frequency in Hz (default=48000)])
+AC_ARG_VAR([PSTFILTER_MCP],[Postfiltering factor for mel-cepstral (default=1.4)])
+AC_ARG_VAR([PSTFILTER_LSP],[Postfiltering factor for LSP (default=0.7)])
+AC_ARG_VAR([IMPLEN],[Length of impulse response (default=576)])
 
 # default values
 if test -z "$FRAMESHIFT"; then
@@ -415,6 +393,10 @@ if test -z "$MGCORDER"; then
 	MGCORDER=49
 fi
 
+if test -z "$BAPORDER"; then
+	BAPORDER=24
+fi
+
 if test -z "$LNGAIN"; then
 	LNGAIN=1
 fi
@@ -427,15 +409,20 @@ if test -z "$UPPERF0"; then
 	UPPERF0=280
 fi 
 
-if test -z "$PSTFILTER"; then
-	PSTFILTER=1.4
+if test -z "$PSTFILTER_MCP"; then
+	PSTFILTER_MCP=1.4
+fi
+
+if test -z "$PSTFILTER_LSP"; then
+	PSTFILTER_LSP=0.7
 fi
 
 if test -z "$IMPLEN"; then
-	IMPLEN=4096
+	IMPLEN=576
 fi
 
 MGCVSIZE=`expr $MGCORDER + 1`
+BAPVSIZE=`expr $BAPORDER + 1`
 
 if test $GAMMA -lt 0; then
 	AC_MSG_ERROR(Cannot use MGC coefficients if GAMMA<0!)
@@ -445,15 +432,18 @@ fi
 
 # substitute variables
 AC_SUBST(FRAMESHIFT)
+AC_SUBST(SAMPFREQ)
 AC_SUBST(FREQWARP)
 AC_SUBST(GAMMA)
 AC_SUBST(MGCORDER)
+AC_SUBST(BAPORDER)
 AC_SUBST(LOWERF0)
 AC_SUBST(UPPERF0)
-AC_SUBST(PSTFILTER)
+AC_SUBST(PSTFILTER_MCP)
+AC_SUBST(PSTFILTER_LSP)
 AC_SUBST(IMPLEN)
-AC_SUBST(SAMPFREQ)
 AC_SUBST(MGCVSIZE)
+AC_SUBST(BAPVSIZE)
 
 
 
@@ -503,7 +493,7 @@ AC_ARG_VAR([NLF0TRANSBLK],[number of blocks for log F0 transforms (default=1)])
 AC_ARG_VAR([NBAPTRANSBLK],[number of blocks for band aperiodicity transforms (default=3)])
 AC_ARG_VAR([MGCBANDWIDTH],[band width for MGC transforms (default=50 for cepstral form, derault=2 for LSP form)])
 AC_ARG_VAR([LF0BANDWIDTH],[band width for log F0 transforms (default=1)])
-AC_ARG_VAR([BAPBANDWIDTH],[band width for band aperiodicity transforms (default=26)])
+AC_ARG_VAR([BAPBANDWIDTH],[band width for band aperiodicity transforms (default=25)])
 
 # default values
 if test -z "$NSTATE"; then
@@ -563,7 +553,7 @@ if test -z "$LF0BANDWIDTH"; then
 fi
 
 if test -z "$BAPBANDWIDTH"; then
-	BAPBANDWIDTH=26
+	BAPBANDWIDTH=25
 fi
 
 # substitute variables
@@ -585,6 +575,7 @@ AC_SUBST(BAPBANDWIDTH)
 
 # parameter generation algorithm settings
 # parse command-line arguments
+AC_ARG_VAR([PGTYPE],[type of speech parameter generation algorithm (0: Cholesky, 1: MixHidden, 2: StateHidden, default=0)])
 AC_ARG_VAR([MAXEMITER],[max EM iteration (default=20)])
 AC_ARG_VAR([EMEPSILON],[convergence factor for EM iteration (default=0.0001)])
 AC_ARG_VAR([USEGV],[turn on GV-based parameter generation algorithm (0:off or 1:on, default=1)])
@@ -601,6 +592,10 @@ AC_ARG_VAR([NOSILGV],[turn on GV without silent and pause phoneme (0:off or 1:on
 AC_ARG_VAR([CDGV],[turn on context-dependent GV (0:off or 1:on, default=1)])
 
 # default values
+if test -z "$PGTYPE"; then
+	PGTYPE=0
+fi
+
 if test -z "$MAXEMITER"; then
 	MAXEMITER=20
 fi
@@ -658,6 +653,7 @@ if test -z "$CDGV"; then
 fi
 
 # substitute variables
+AC_SUBST(PGTYPE)
 AC_SUBST(MAXEMITER)
 AC_SUBST(EMEPSILON)
 AC_SUBST(USEGV)

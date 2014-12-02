@@ -5,7 +5,7 @@
 #           http://hts.sp.nitech.ac.jp/                             #
 # ----------------------------------------------------------------- #
 #                                                                   #
-#  Copyright (c) 2001-2011  Nagoya Institute of Technology          #
+#  Copyright (c) 2001-2012  Nagoya Institute of Technology          #
 #                           Department of Computer Science          #
 #                                                                   #
 #                2001-2008  Tokyo Institute of Technology           #
@@ -54,15 +54,17 @@ if ( @ARGV < 1 ) {
 require( $ARGV[0] );
 
 # model structure
-$vSize{'total'}   = 0;
-$nstream{'total'} = 0;
-$nPdfStreams      = 0;
-foreach $type (@cmp) {
-   $vSize{$type} = $nwin{$type} * $ordr{$type};
-   $vSize{'total'} += $vSize{$type};
-   $nstream{$type} = $stre{$type} - $strb{$type} + 1;
-   $nstream{'total'} += $nstream{$type};
-   $nPdfStreams++;
+foreach $set (@SET) {
+   $vSize{$set}{'total'}   = 0;
+   $nstream{$set}{'total'} = 0;
+   $nPdfStreams{$set}      = 0;
+   foreach $type ( @{ $ref{$set} } ) {
+      $vSize{$set}{$type} = $nwin{$type} * $ordr{$type};
+      $vSize{$set}{'total'} += $vSize{$set}{$type};
+      $nstream{$set}{$type} = $stre{$type} - $strb{$type} + 1;
+      $nstream{$set}{'total'} += $nstream{$set}{$type};
+      $nPdfStreams{$set}++;
+   }
 }
 
 # File locations =========================
@@ -83,22 +85,21 @@ $mlf{'mon'} = "$datdir/labels/mono.mlf";
 $mlf{'ful'} = "$datdir/labels/full.mlf";
 
 # configuration variable files
-$cfg{'trn'} = "$prjdir/configs/trn.cnf";
-$cfg{'nvf'} = "$prjdir/configs/nvf.cnf";
-$cfg{'cnv'} = "$prjdir/configs/cnv.cnf";
-$cfg{'stc'} = "$prjdir/configs/stc.cnf";
-$cfg{'syn'} = "$prjdir/configs/syn.cnf";
+$cfg{'trn'} = "$prjdir/configs/qst${qnum}/ver${ver}/trn.cnf";
+$cfg{'nvf'} = "$prjdir/configs/qst${qnum}/ver${ver}/nvf.cnf";
+$cfg{'syn'} = "$prjdir/configs/qst${qnum}/ver${ver}/syn.cnf";
+$cfg{'stc'} = "$prjdir/configs/qst${qnum}/ver${ver}/stc.cnf";
 foreach $type (@cmp) {
-   $cfg{$type} = "$prjdir/configs/${type}.cnf";
+   $cfg{$type} = "$prjdir/configs/qst${qnum}/ver${ver}/${type}.cnf";
 }
 foreach $type (@dur) {
-   $cfg{$type} = "$prjdir/configs/${type}.cnf";
+   $cfg{$type} = "$prjdir/configs/qst${qnum}/ver${ver}/${type}.cnf";
 }
 
 # name of proto type definition file
-$prtfile{'cmp'} = "$prjdir/proto/qst${qnum}/ver$ver/state-${nState}_stream-$nstream{'total'}";
+$prtfile{'cmp'} = "$prjdir/proto/qst${qnum}/ver${ver}/state-${nState}_stream-$nstream{'cmp'}{'total'}";
 foreach $type (@cmp) {
-   $prtfile{'cmp'} .= "_${type}-$vSize{$type}";
+   $prtfile{'cmp'} .= "_${type}-$vSize{'cmp'}{$type}";
 }
 $prtfile{'cmp'} .= ".prt";
 
@@ -166,6 +167,9 @@ foreach $set (@SET) {
       $pdf{$type} = "$voice/${type}.pdf";
    }
 }
+$type       = 'lpf';
+$trv{$type} = "$voice/tree-${type}.inf";
+$pdf{$type} = "$voice/${type}.pdf";
 
 # window files for parameter generation
 $windir = "${datdir}/win";
@@ -174,6 +178,9 @@ foreach $type (@cmp) {
       $win{$type}[ $d - 1 ] = "${type}.win${d}";
    }
 }
+$type                 = 'lpf';
+$d                    = 1;
+$win{$type}[ $d - 1 ] = "${type}.win${d}";
 
 # global variance files and directories for parameter generation
 $gvdir         = "$prjdir/gv/qst${qnum}/ver${ver}";
@@ -182,7 +189,7 @@ $gvdatdir      = "$gvdir/dat";
 $gvlabdir      = "$gvdir/lab";
 $scp{'gv'}     = "$gvdir/gv.scp";
 $mlf{'gv'}     = "$gvdir/gv.mlf";
-$prtfile{'gv'} = "$gvdir/state-1_stream-${nPdfStreams}";
+$prtfile{'gv'} = "$gvdir/state-1_stream-${nPdfStreams{'cmp'}}";
 foreach $type (@cmp) {
    $prtfile{'gv'} .= "_${type}-$ordr{$type}";
 }
@@ -213,7 +220,6 @@ $HERest{'mon'} = "$HEREST    -A    -C $cfg{'trn'} -D -T 1 -S $scp{'trn'} -I $mlf
 $HERest{'ful'} = "$HEREST    -A -B -C $cfg{'trn'} -D -T 1 -S $scp{'trn'} -I $mlf{'ful'} -m 1 -u tmvwdmv -w $wf -t $beam ";
 $HERest{'gv'}  = "$HEREST    -A    -C $cfg{'trn'} -D -T 1 -S $scp{'gv'}  -I $mlf{'gv'}  -m 1 ";
 $HHEd{'trn'}   = "$HHED      -A -B -C $cfg{'trn'} -D -T 1 -p -i ";
-$HHEd{'cnv'}   = "$HHED      -A -B -C $cfg{'cnv'} -D -T 1 -p -i ";
 $HSMMAlign     = "$HSMMALIGN -A    -C $cfg{'trn'} -D -T 1 -S $scp{'trn'} -I $mlf{'mon'} -t $beam -w 1.0 ";
 $HMGenS        = "$HMGENS    -A -B -C $cfg{'syn'} -D -T 1 -S $scp{'gen'} -t $beam ";
 
@@ -226,7 +232,7 @@ if ($MKEMV) {
    print_time("preparing environments");
 
    # make directories
-   foreach $dir ( 'models', 'stats', 'edfiles', 'trees', 'gv', 'voices', 'gen', 'proto' ) {
+   foreach $dir ( 'models', 'stats', 'edfiles', 'trees', 'gv', 'voices', 'gen', 'proto', 'configs' ) {
       mkdir "$prjdir/$dir",                      0755;
       mkdir "$prjdir/$dir/qst${qnum}",           0755;
       mkdir "$prjdir/$dir/qst${qnum}/ver${ver}", 0755;
@@ -240,7 +246,6 @@ if ($MKEMV) {
    }
 
    # make config files
-   mkdir "$prjdir/configs", 0755;
    make_config();
 
    # make model prototype definition file
@@ -256,33 +261,7 @@ if ($HCMPV) {
    shell("head -n 1 $prtfile{'cmp'} > $initmmf{'cmp'}");
    shell("cat $vfloors{'cmp'} >> $initmmf{'cmp'}");
 
-   shell("$HList | $TEE $model{'cmp'}/HList");
-   $dsum1 = 0.0;
-   $dsum2 = 0.0;
-   $dnum  = 0;
-   open( LOG, "$model{'cmp'}/HList" ) || die "Cannot open $!";
-   while ( $str = <LOG> ) {
-      if ( index( $str, " Source: " ) >= 0 ) {
-         $str = substr( $str, index( $str, " Source: " ) + 9 );
-         while ( index( $str, " " ) >= 0 || index( $str, "\t" ) >= 0 ) { substr( $str, -1, 1 ) = ""; }
-         $base = `basename $str .cmp`;
-         chomp($base);
-      }
-      elsif ( index( $str, "Num Samples:" ) >= 0 ) {
-         $nframe = substr( $str, 14, index( $str, "File Format:" ) - 14 );
-         $nlab = `cat $datdir/labels/mono/$base.lab | $WC -l`;
-         chomp($nlab);
-         $dtmp = $nframe / ( $nlab * $nState );
-         $dsum1 += $dtmp;
-         $dsum2 += $dtmp * $dtmp;
-         $dnum++;
-      }
-   }
-   close(LOG);
-   $dmean = $dsum1 / $dnum;
-   $dvari = $dsum2 / $dnum - $dmean * $dmean;
-
-   make_duration_vfloor( $dmean, $dvari );
+   make_duration_vfloor( $initdurmean, $initdurvari );
 }
 
 # HInit & HRest (initialization & reestimation)
@@ -672,17 +651,12 @@ if ($PGEN1) {
    print_time("generating speech parameter sequences (1mix)");
 
    $mix = '1mix';
-
+   $dir = "${prjdir}/gen/qst${qnum}/ver${ver}/$mix/$pgtype";
    mkdir "${prjdir}/gen/qst${qnum}/ver${ver}/$mix", 0755;
-   for ( $pgtype = 0 ; $pgtype <= 2 ; $pgtype++ ) {
+   mkdir $dir, 0755;
 
-      # prepare output directory
-      $dir = "${prjdir}/gen/qst${qnum}/ver${ver}/$mix/$pgtype";
-      mkdir $dir, 0755;
-
-      # generate parameter
-      shell("$HMGenS -c $pgtype -H $rclammf{'cmp'}.$mix -N $rclammf{'dur'}.$mix -M $dir $tiedlst{'cmp'} $tiedlst{'dur'}");
-   }
+   # generate parameter
+   shell("$HMGenS -c $pgtype -H $rclammf{'cmp'}.$mix -N $rclammf{'dur'}.$mix -M $dir $tiedlst{'cmp'} $tiedlst{'dur'}");
 }
 
 # SPTK (synthesizing waveforms (1mix))
@@ -690,22 +664,20 @@ if ($WGEN1) {
    print_time("synthesizing waveforms (1mix)");
 
    $mix = '1mix';
+   $dir = "${prjdir}/gen/qst${qnum}/ver${ver}/$mix/$pgtype";
 
-   mkdir "${prjdir}/gen/qst${qnum}/ver${ver}/$mix", 0755;
-   for ( $pgtype = 0 ; $pgtype <= 2 ; $pgtype++ ) {
-      gen_wave("${prjdir}/gen/qst${qnum}/ver${ver}/$mix/$pgtype");
-   }
+   gen_wave("$dir");
 }
 
-# HHEd (converting mmfs to the hts_engine file format)
+# HHEd (converting mmfs to the HTS voice format)
 if ($CONVM) {
-   print_time("converting mmfs to the hts_engine file format");
+   print_time("converting mmfs to the HTS voice format");
 
    # models and trees
    foreach $set (@SET) {
       foreach $type ( @{ $ref{$set} } ) {
          make_edfile_convert($type);
-         shell("$HHEd{'cnv'} -H $reclmmf{$set} $cnv{$type} $lst{'ful'}");
+         shell("$HHEd{'trn'} -H $reclmmf{$set} $cnv{$type} $lst{'ful'}");
          shell("mv $trd{$set}/trees.$strb{$type} $trv{$type}");
          shell("mv $model{$set}/pdf.$strb{$type} $pdf{$type}");
       }
@@ -721,15 +693,18 @@ if ($CONVM) {
       my $s = 1;
       foreach $type (@cmp) {    # convert hts_engine format
          make_edfile_convert_gv($type);
-         shell("$HHEd{'cnv'} -H $clusmmf{'gv'} $gvcnv{$type} $gvdir/gv.list");
+         shell("$HHEd{'trn'} -H $clusmmf{'gv'} $gvcnv{$type} $gvdir/gv.list");
          shell("mv $gvdir/trees.$s $gvtrv{$type}");
          shell("mv $gvdir/pdf.$s $gvpdf{$type}");
          $s++;
       }
-      if ( $nosilgv && @slnt > 0 ) {    # gv switch
-         make_gv_switch();
-      }
    }
+
+   # low-pass filter
+   make_lpf();
+
+   # make HTS voice
+   make_htsvoice( "$voice", "${dset}_${spkr}" );
 }
 
 # hts_engine (synthesizing waveforms using hts_engine)
@@ -740,40 +715,18 @@ if ($ENGIN) {
    mkdir ${dir}, 0755;
 
    # hts_engine command line & options
-   # model file & trees
-   $hts_engine = "$ENGINE -td $trv{'dur'} -tf $trv{'lf0'} -tm $trv{'mgc'} -tl $trv{'lpf'} -md $pdf{'dur'} -mf $pdf{'lf0'} -mm $pdf{'mgc'} -ml $pdf{'lpf'} ";
-
-   # window coefficients
-   $type = 'mgc';
-   for ( $d = 1 ; $d <= $nwin{$type} ; $d++ ) {
-      $hts_engine .= "-dm $voice/$win{$type}[$d-1] ";
-   }
-   $type = 'lf0';
-   for ( $d = 1 ; $d <= $nwin{$type} ; $d++ ) {
-      $hts_engine .= "-df $voice/$win{$type}[$d-1] ";
-   }
-   $type = 'lpf';
-   $d    = 1;
-   $hts_engine .= "-dl $voice/$win{$type}[$d-1] ";
-
-   # control parameters (sampling rate, frame shift, frequency warping, etc.)
-   $lgopt = "-l" if ($lg);
-   $hts_engine .= "-s $sr -p $fs -a $fw -g $gm $lgopt -b " . ( $pf - 1.0 ) . " ";
-
-   # GV pdfs
-   if ($useGV) {
-      $hts_engine .= "-cm $gvpdf{'mgc'} -cf $gvpdf{'lf0'} ";
-      if ( $nosilgv && @slnt > 0 ) {
-         $hts_engine .= "-k $voice/gv-switch.inf ";
+   $hts_engine = "$ENGINE -m ${voice}/${dset}_${spkr}.htsvoice ";
+   if ( !$useGV ) {
+      if ( $gm == 0 ) {
+         $hts_engine .= "-b " . ( $pf_mcp - 1.0 ) . " ";
       }
-      if ($cdgv) {
-         $hts_engine .= "-em $gvtrv{'mgc'} -ef $gvtrv{'lf0'} ";
+      else {
+         $hts_engine .= "-b " . $pf_lsp . " ";
       }
-      $hts_engine .= "-b 0.0 ";    # turn off postfiltering
    }
 
    # generate waveform using hts_engine
-   open( SCP, $scp{'gen'} ) || die "Cannot open $!";
+   open( SCP, "$scp{'gen'}" ) || die "Cannot open $!";
    while (<SCP>) {
       $lab = $_;
       chomp($lab);
@@ -781,8 +734,7 @@ if ($ENGIN) {
       chomp($base);
 
       print "Synthesizing a speech waveform from $lab using hts_engine...";
-      shell("$hts_engine -or ${dir}/${base}.raw -ot ${dir}/${base}.trace $lab");
-      shell("$SOX -c 1 -s -$SOXOPTION -t raw -r $sr ${dir}/${base}.raw -c 1 -s -$SOXOPTION -t wav -r $sr ${dir}/${base}.wav");
+      shell("$hts_engine -or ${dir}/${base}.raw -ow ${dir}/${base}.wav -ot ${dir}/${base}.trace $lab");
       print "done.\n";
    }
    close(SCP);
@@ -823,17 +775,12 @@ if ($PGENS) {
    print_time("generating speech parameter sequences (stc)");
 
    $mix = 'stc';
-
+   $dir = "${prjdir}/gen/qst${qnum}/ver${ver}/$mix/$pgtype";
    mkdir "${prjdir}/gen/qst${qnum}/ver${ver}/$mix", 0755;
-   for ( $pgtype = 0 ; $pgtype <= 2 ; $pgtype++ ) {
+   mkdir $dir, 0755;
 
-      # prepare output directory
-      $dir = "${prjdir}/gen/qst${qnum}/ver${ver}/$mix/$pgtype";
-      mkdir $dir, 0755;
-
-      # generate parameter
-      shell("$HMGenS -c $pgtype -H $stcammf{'cmp'} -N $stcammf{'dur'} -M $dir $tiedlst{'cmp'} $tiedlst{'dur'}");
-   }
+   # generate parameter
+   shell("$HMGenS -c $pgtype -H $stcammf{'cmp'} -N $stcammf{'dur'} -M $dir $tiedlst{'cmp'} $tiedlst{'dur'}");
 }
 
 # SPTK (synthesizing waveforms (stc))
@@ -841,11 +788,9 @@ if ($WGENS) {
    print_time("synthesizing waveforms (stc)");
 
    $mix = 'stc';
+   $dir = "${prjdir}/gen/qst${qnum}/ver${ver}/$mix/$pgtype";
 
-   mkdir "${prjdir}/gen/qst${qnum}/ver${ver}/$mix", 0755;
-   for ( $pgtype = 0 ; $pgtype <= 2 ; $pgtype++ ) {
-      gen_wave("${prjdir}/gen/qst${qnum}/ver${ver}/$mix/$pgtype");
-   }
+   gen_wave("$dir");
 }
 
 # HHED (increasing the number of mixture components (1mix -> 2mix))
@@ -896,17 +841,12 @@ if ($PGEN2) {
    print_time("generating speech parameter sequences (2mix)");
 
    $mix = '2mix';
-
+   $dir = "${prjdir}/gen/qst${qnum}/ver${ver}/$mix/$pgtype";
    mkdir "${prjdir}/gen/qst${qnum}/ver${ver}/$mix", 0755;
-   for ( $pgtype = 0 ; $pgtype <= 2 ; $pgtype++ ) {
+   mkdir $dir, 0755;
 
-      # prepare output directory
-      $dir = "${prjdir}/gen/qst${qnum}/ver${ver}/$mix/$pgtype";
-      mkdir $dir, 0755;
-
-      # generate parameter
-      shell("$HMGenS -c $pgtype -H $rclammf{'cmp'} -N $rclammf{'dur'} -M $dir $tiedlst{'cmp'} $tiedlst{'dur'}");
-   }
+   # generate parameter
+   shell("$HMGenS -c $pgtype -H $rclammf{'cmp'} -N $rclammf{'dur'} -M $dir $tiedlst{'cmp'} $tiedlst{'dur'}");
 }
 
 # SPTK (synthesizing waveforms (2mix))
@@ -914,11 +854,9 @@ if ($WGEN2) {
    print_time("synthesizing waveforms (2mix)");
 
    $mix = '2mix';
+   $dir = "${prjdir}/gen/qst${qnum}/ver${ver}/$mix/$pgtype";
 
-   mkdir "${prjdir}/gen/qst${qnum}/ver${ver}/$mix", 0755;
-   for ( $pgtype = 0 ; $pgtype <= 2 ; $pgtype++ ) {
-      gen_wave("${prjdir}/gen/qst${qnum}/ver${ver}/$mix/$pgtype");
-   }
+   gen_wave("$dir");
 }
 
 # sub routines ============================
@@ -959,10 +897,10 @@ sub make_proto {
 
    # output header
    # output vector size & feature type
-   print PROTO "~o <VecSize> $vSize{'total'} <USER> <DIAGC>";
+   print PROTO "~o <VecSize> $vSize{'cmp'}{'total'} <USER> <DIAGC>";
 
    # output information about multi-space probability distribution (MSD)
-   print PROTO "<MSDInfo> $nstream{'total'} ";
+   print PROTO "<MSDInfo> $nstream{'cmp'}{'total'} ";
    foreach $type (@cmp) {
       for ( $s = $strb{$type} ; $s <= $stre{$type} ; $s++ ) {
          print PROTO " $msdi{$type} ";
@@ -970,10 +908,10 @@ sub make_proto {
    }
 
    # output information about stream
-   print PROTO "<StreamInfo> $nstream{'total'}";
+   print PROTO "<StreamInfo> $nstream{'cmp'}{'total'}";
    foreach $type (@cmp) {
       for ( $s = $strb{$type} ; $s <= $stre{$type} ; $s++ ) {
-         printf PROTO " %d", $vSize{$type} / $nstream{$type};
+         printf PROTO " %d", $vSize{'cmp'}{$type} / $nstream{'cmp'}{$type};
       }
    }
    print PROTO "\n";
@@ -989,7 +927,7 @@ sub make_proto {
       print PROTO "  <State> $i\n";
 
       # output stream weight
-      print PROTO "  <SWeights> $nstream{'total'}";
+      print PROTO "  <SWeights> $nstream{'cmp'}{'total'}";
       foreach $type (@cmp) {
          for ( $s = $strb{$type} ; $s <= $stre{$type} ; $s++ ) {
             print PROTO " $strw{$type}";
@@ -1003,8 +941,8 @@ sub make_proto {
             print PROTO "  <Stream> $s\n";
             if ( $msdi{$type} == 0 ) {    # non-MSD stream
                                           # output mean vector
-               printf PROTO "    <Mean> %d\n", $vSize{$type} / $nstream{$type};
-               for ( $k = 1 ; $k <= $vSize{$type} / $nstream{$type} ; $k++ ) {
+               printf PROTO "    <Mean> %d\n", $vSize{'cmp'}{$type} / $nstream{'cmp'}{$type};
+               for ( $k = 1 ; $k <= $vSize{'cmp'}{$type} / $nstream{'cmp'}{$type} ; $k++ ) {
                   print PROTO "      " if ( $k % 10 == 1 );
                   print PROTO "0.0 ";
                   print PROTO "\n" if ( $k % 10 == 0 );
@@ -1012,8 +950,8 @@ sub make_proto {
                print PROTO "\n" if ( $k % 10 != 1 );
 
                # output covariance matrix (diag)
-               printf PROTO "    <Variance> %d\n", $vSize{$type} / $nstream{$type};
-               for ( $k = 1 ; $k <= $vSize{$type} / $nstream{$type} ; $k++ ) {
+               printf PROTO "    <Variance> %d\n", $vSize{'cmp'}{$type} / $nstream{'cmp'}{$type};
+               for ( $k = 1 ; $k <= $vSize{'cmp'}{$type} / $nstream{'cmp'}{$type} ; $k++ ) {
                   print PROTO "      " if ( $k % 10 == 1 );
                   print PROTO "1.0 ";
                   print PROTO "\n" if ( $k % 10 == 0 );
@@ -1029,8 +967,8 @@ sub make_proto {
                print PROTO "  <Mixture> 1 0.5000\n";
 
                # output mean vector
-               printf PROTO "    <Mean> %d\n", $vSize{$type} / $nstream{$type};
-               for ( $k = 1 ; $k <= $vSize{$type} / $nstream{$type} ; $k++ ) {
+               printf PROTO "    <Mean> %d\n", $vSize{'cmp'}{$type} / $nstream{'cmp'}{$type};
+               for ( $k = 1 ; $k <= $vSize{'cmp'}{$type} / $nstream{'cmp'}{$type} ; $k++ ) {
                   print PROTO "      " if ( $k % 10 == 1 );
                   print PROTO "0.0 ";
                   print PROTO "\n" if ( $k % 10 == 0 );
@@ -1038,8 +976,8 @@ sub make_proto {
                print PROTO "\n" if ( $k % 10 != 1 );
 
                # output covariance matrix (diag)
-               printf PROTO "    <Variance> %d\n", $vSize{$type} / $nstream{$type};
-               for ( $k = 1 ; $k <= $vSize{$type} / $nstream{$type} ; $k++ ) {
+               printf PROTO "    <Variance> %d\n", $vSize{'cmp'}{$type} / $nstream{'cmp'}{$type};
+               for ( $k = 1 ; $k <= $vSize{'cmp'}{$type} / $nstream{'cmp'}{$type} ; $k++ ) {
                   print PROTO "      " if ( $k % 10 == 1 );
                   print PROTO "1.0 ";
                   print PROTO "\n" if ( $k % 10 == 0 );
@@ -1106,7 +1044,7 @@ sub make_duration_vfloor {
       print MMF " 1";
    }
    print MMF "\n";
-   print MMF "<VECSIZE> 5<NULLD><USER><DIAGC>\n";
+   print MMF "<VECSIZE> ${nState}<NULLD><USER><DIAGC>\n";
    print MMF "~h \"$avermmf{'dur'}\"\n";
    print MMF "<BEGINHMM>\n";
    print MMF "<NUMSTATES> 3\n";
@@ -1136,12 +1074,12 @@ sub make_proto_gv {
       $s += $ordr{$type};
    }
    print PROTO "~o <VecSize> $s <USER> <DIAGC>\n";
-   print PROTO "<MSDInfo> $nPdfStreams ";
+   print PROTO "<MSDInfo> $nPdfStreams{'cmp'} ";
    foreach $type (@cmp) {
       print PROTO "0 ";
    }
    print PROTO "\n";
-   print PROTO "<StreamInfo> $nPdfStreams ";
+   print PROTO "<StreamInfo> $nPdfStreams{'cmp'} ";
    foreach $type (@cmp) {
       print PROTO "$ordr{$type} ";
    }
@@ -1180,10 +1118,8 @@ sub make_proto_gv {
 sub make_data_gv {
    my ( $type, $cmp, $base, $str, @arr, $start, $end, $find, $i, $j );
 
-   foreach $type (@cmp) {
-      shell("rm -f $scp{'gv'}");
-      shell("touch $scp{'gv'}");
-   }
+   shell("rm -f $scp{'gv'}");
+   shell("touch $scp{'gv'}");
    open( SCP, $scp{'trn'} ) || die "Cannot open $!";
    if ($cdgv) {
       open( LST, "> $gvdir/tmp.list" );
@@ -1395,10 +1331,10 @@ sub make_stc_base {
    print BASE "<PARAMETERS> MIXBASE\n";
 
    # output information about stream
-   print BASE "<STREAMINFO> $nstream{'total'}";
+   print BASE "<STREAMINFO> $nstream{'cmp'}{'total'}";
    foreach $type (@cmp) {
       for ( $s = $strb{$type} ; $s <= $stre{$type} ; $s++ ) {
-         printf BASE " %d", $vSize{$type} / $nstream{$type};
+         printf BASE " %d", $vSize{'cmp'}{$type} / $nstream{'cmp'}{$type};
       }
    }
    print BASE "\n";
@@ -1448,7 +1384,7 @@ sub make_config {
    print CONF "APPLYVFLOOR = T\n";
    print CONF "NATURALREADORDER = T\n";
    print CONF "NATURALWRITEORDER = T\n";
-   print CONF "VFLOORSCALESTR = \"Vector $nstream{'total'}";
+   print CONF "VFLOORSCALESTR = \"Vector $nstream{'cmp'}{'total'}";
    foreach $type (@cmp) {
       for ( $s = $strb{$type} ; $s <= $stre{$type} ; $s++ ) {
          print CONF " $vflr{$type}";
@@ -1493,7 +1429,7 @@ sub make_config {
 
    foreach $type (@cmp) {
       for ( $s = $strb{$type} ; $s <= $stre{$type} ; $s++ ) {
-         $bSize = $vSize{$type} / $nstream{$type} / $nblk{$type};
+         $bSize = $vSize{'cmp'}{$type} / $nstream{'cmp'}{$type} / $nblk{$type};
          print CONF "IntVec $nblk{$type} ";
          for ( $b = 1 ; $b <= $nblk{$type} ; $b++ ) {
             print CONF "$bSize ";
@@ -1504,7 +1440,7 @@ sub make_config {
    print CONF "BANDWIDTH = \"";
    foreach $type (@cmp) {
       for ( $s = $strb{$type} ; $s <= $stre{$type} ; $s++ ) {
-         $bSize = $vSize{$type} / $nstream{$type} / $nblk{$type};
+         $bSize = $vSize{'cmp'}{$type} / $nstream{'cmp'}{$type} / $nblk{$type};
          print CONF "IntVec $nblk{$type} ";
          for ( $b = 1 ; $b <= $nblk{$type} ; $b++ ) {
             print CONF "$band{$type} ";
@@ -1514,31 +1450,25 @@ sub make_config {
    print CONF "\"\n";
    close(CONF);
 
-   # config file for model conversion
-   open( CONF, ">$cfg{'cnv'}" ) || die "Cannot open $!";
-   print CONF "NATURALREADORDER = T\n";
-   print CONF "NATURALWRITEORDER = F\n";    # hts_engine used BIG ENDIAN
-   close(CONF);
-
    # config file for parameter generation
    open( CONF, ">$cfg{'syn'}" ) || die "Cannot open $!";
    print CONF "NATURALREADORDER = T\n";
    print CONF "NATURALWRITEORDER = T\n";
    print CONF "USEALIGN = T\n";
 
-   print CONF "PDFSTRSIZE = \"IntVec $nPdfStreams";    # PdfStream structure
+   print CONF "PDFSTRSIZE = \"IntVec $nPdfStreams{'cmp'}";    # PdfStream structure
    foreach $type (@cmp) {
-      print CONF " $nstream{$type}";
+      print CONF " $nstream{'cmp'}{$type}";
    }
    print CONF "\"\n";
 
-   print CONF "PDFSTRORDER = \"IntVec $nPdfStreams";    # order of each PdfStream
+   print CONF "PDFSTRORDER = \"IntVec $nPdfStreams{'cmp'}";    # order of each PdfStream
    foreach $type (@cmp) {
       print CONF " $ordr{$type}";
    }
    print CONF "\"\n";
 
-   print CONF "PDFSTREXT = \"StrVec $nPdfStreams";      # filename extension for each PdfStream
+   print CONF "PDFSTREXT = \"StrVec $nPdfStreams{'cmp'}";      # filename extension for each PdfStream
    foreach $type (@cmp) {
       print CONF " $type";
    }
@@ -1546,10 +1476,10 @@ sub make_config {
 
    print CONF "WINFN = \"";
    foreach $type (@cmp) {
-      print CONF "StrVec $nwin{$type} @{$win{$type}} ";    # window coefficients files for each PdfStream
+      print CONF "StrVec $nwin{$type} @{$win{$type}} ";        # window coefficients files for each PdfStream
    }
    print CONF "\"\n";
-   print CONF "WINDIR = $windir\n";                        # directory which stores window coefficients files
+   print CONF "WINDIR = $windir\n";                            # directory which stores window coefficients files
 
    print CONF "MAXEMITER = $maxEMiter\n";
    print CONF "EMEPSILON = $EMepsilon\n";
@@ -1763,7 +1693,7 @@ sub make_edfile_mkunseen($) {
 }
 
 # sub routine for generating .hed files for making unseen models for GV
-sub make_edfile_mkunseen_gv() {
+sub make_edfile_mkunseen_gv {
    my ($type);
 
    open( EDFILE, ">$mku{'gv'}" ) || die "Cannot open $!";
@@ -1781,65 +1711,349 @@ sub make_edfile_mkunseen_gv() {
    close(EDFILE);
 }
 
-sub make_gv_switch() {
-   my ($i);
+# sub routine for generating low pass filter of hts_engine API
+sub make_lpf {
+   my ( $lfil, @coef, $coefSize, $i, $j );
 
-   open( SWITCH, "> $voice/gv-switch.inf" ) || die "Cannot open $!";
-   print SWITCH "QS gv-switch { ";
-   for ( $i = 0 ; $i < @slnt ; $i++ ) {
-      if ( $i > 0 ) {
-         print SWITCH ",";
-      }
-      print SWITCH "\"*-$slnt[$i]+*\"";
+   $lfil     = `$PERL $datdir/scripts/makefilter.pl $sr 0`;
+   @coef     = split( '\s', $lfil );
+   $coefSize = @coef;
+
+   shell("rm -f $pdf{'lpf'}");
+   shell("touch $pdf{'lpf'}");
+   for ( $i = 0 ; $i < $nState ; $i++ ) {
+      shell("echo 1 | $X2X +ai >> $pdf{'lpf'}");
    }
-   print SWITCH " }\n";
-   print SWITCH "{*}[2]\n";
-   print SWITCH "{\n";
-   print SWITCH "   0 gv-switch \"gv-switch_2\" \"gv-switch_1\"\n";
-   print SWITCH "}\n";
-   close(SWITCH);
+   for ( $i = 0 ; $i < $nState ; $i++ ) {
+      for ( $j = 0 ; $j < $coefSize ; $j++ ) {
+         shell("echo $coef[$j] | $X2X +af >> $pdf{'lpf'}");
+      }
+      for ( $j = 0 ; $j < $coefSize ; $j++ ) {
+         shell("echo 0.0 | $X2X +af >> $pdf{'lpf'}");
+      }
+   }
+
+   open( INF, "> $trv{'lpf'}" );
+   for ( $i = 2 ; $i <= $nState + 1 ; $i++ ) {
+      print INF "{*}[${i}]\n";
+      print INF "   \"lpf_s${i}_1\"\n";
+   }
+   close(INF);
+
+   open( WIN, "> $voice/lpf.win1" );
+   print WIN "1 1.0\n";
+   close(WIN);
 }
 
-# sub routine for log f0 -> f0 conversion
-sub lf02f0($$) {
-   my ( $base, $gendir ) = @_;
-   my ( $t, $T, $data );
+# sub routine for generating HTS voice for hts_engine API
+sub make_htsvoice($$) {
+   my ( $voicedir, $voicename ) = @_;
+   my ( $i, $type, $tmp, @coef, $coefSize, $file_index, $s, $e );
 
-   # read log f0 file
-   open( IN, "$gendir/${base}.lf0" );
-   @STAT = stat(IN);
-   read( IN, $data, $STAT[7] );
-   close(IN);
+   open( HTSVOICE, "> ${voicedir}/${voicename}.htsvoice" );
 
-   # log f0 -> f0 conversion
-   $T = $STAT[7] / 4;
-   @frq = unpack( "f$T", $data );
-   for ( $t = 0 ; $t < $T ; $t++ ) {
-      if ( $frq[$t] == -1.0e+10 ) {
-         $out[$t] = 0.0;
+   # global information
+   print HTSVOICE "[GLOBAL]\n";
+   print HTSVOICE "HTS_VOICE_VERSION:1.0\n";
+   print HTSVOICE "SAMPLING_FREQUENCY:${sr}\n";
+   print HTSVOICE "FRAME_PERIOD:${fs}\n";
+   print HTSVOICE "NUM_STATES:${nState}\n";
+   print HTSVOICE "NUM_STREAMS:" . ( ${ nPdfStreams { 'cmp' } } + 1 ) . "\n";
+   print HTSVOICE "STREAM_TYPE:";
+
+   for ( $i = 0 ; $i < @cmp ; $i++ ) {
+      if ( $i != 0 ) {
+         print HTSVOICE ",";
       }
-      else {
-         $out[$t] = exp( $frq[$t] );
+      $tmp = get_stream_name( $cmp[$i] );
+      print HTSVOICE "${tmp}";
+   }
+   print HTSVOICE ",LPF\n";
+   print HTSVOICE "FULLCONTEXT_FORMAT:${fclf}\n";
+   print HTSVOICE "FULLCONTEXT_VERSION:${fclv}\n";
+   if ($nosilgv) {
+      print HTSVOICE "GV_OFF_CONTEXT:";
+      for ( $i = 0 ; $i < @slnt ; $i++ ) {
+         if ( $i != 0 ) {
+            print HTSVOICE ",";
+         }
+         print HTSVOICE "\"*-${slnt[$i]}+*\"";
       }
    }
-   $data = pack( "f$T", @out );
+   print HTSVOICE "\n";
+   print HTSVOICE "COMMENT:\n";
 
-   # output data
-   open( OUT, ">$gendir/${base}.f0" );
-   print OUT $data;
-   close(OUT);
-   return $T;
+   # stream information
+   print HTSVOICE "[STREAM]\n";
+   foreach $type (@cmp) {
+      $tmp = get_stream_name($type);
+      print HTSVOICE "VECTOR_LENGTH[${tmp}]:${ordr{$type}}\n";
+   }
+   $type     = "lpf";
+   $tmp      = get_stream_name($type);
+   @coef     = split( '\s', `$PERL $datdir/scripts/makefilter.pl $sr 0` );
+   $coefSize = @coef;
+   print HTSVOICE "VECTOR_LENGTH[${tmp}]:${coefSize}\n";
+   foreach $type (@cmp) {
+      $tmp = get_stream_name($type);
+      print HTSVOICE "IS_MSD[${tmp}]:${msdi{$type}}\n";
+   }
+   $type = "lpf";
+   $tmp  = get_stream_name($type);
+   print HTSVOICE "IS_MSD[${tmp}]:0\n";
+   foreach $type (@cmp) {
+      $tmp = get_stream_name($type);
+      print HTSVOICE "NUM_WINDOWS[${tmp}]:${nwin{$type}}\n";
+   }
+   $type = "lpf";
+   $tmp  = get_stream_name($type);
+   print HTSVOICE "NUM_WINDOWS[${tmp}]:1\n";
+   foreach $type (@cmp) {
+      $tmp = get_stream_name($type);
+      if ($useGV) {
+         print HTSVOICE "USE_GV[${tmp}]:1\n";
+      }
+      else {
+         print HTSVOICE "USE_GV[${tmp}]:0\n";
+      }
+   }
+   $type = "lpf";
+   $tmp  = get_stream_name($type);
+   print HTSVOICE "USE_GV[${tmp}]:0\n";
+   foreach $type (@cmp) {
+      $tmp = get_stream_name($type);
+      if ( $tmp eq "MCP" ) {
+         print HTSVOICE "OPTION[${tmp}]:ALPHA=$fw\n";
+      }
+      elsif ( $tmp eq "LSP" ) {
+         print HTSVOICE "OPTION[${tmp}]:ALPHA=$fw,GAMMA=$gm,LN_GAIN=$lg\n";
+      }
+      else {
+         print HTSVOICE "OPTION[${tmp}]:\n";
+      }
+   }
+   $type = "lpf";
+   $tmp  = get_stream_name($type);
+   print HTSVOICE "OPTION[${tmp}]:\n";
+
+   # position
+   $file_index = 0;
+   print HTSVOICE "[POSITION]\n";
+   $file_size = get_file_size("${voicedir}/dur.pdf");
+   $s         = $file_index;
+   $e         = $file_index + $file_size - 1;
+   print HTSVOICE "DURATION_PDF:${s}-${e}\n";
+   $file_index += $file_size;
+   $file_size = get_file_size("${voicedir}/tree-dur.inf");
+   $s         = $file_index;
+   $e         = $file_index + $file_size - 1;
+   print HTSVOICE "DURATION_TREE:${s}-${e}\n";
+   $file_index += $file_size;
+
+   foreach $type (@cmp) {
+      $tmp = get_stream_name($type);
+      print HTSVOICE "STREAM_WIN[${tmp}]:";
+      for ( $i = 0 ; $i < $nwin{$type} ; $i++ ) {
+         $file_size = get_file_size("${voicedir}/$win{$type}[$i]");
+         $s         = $file_index;
+         $e         = $file_index + $file_size - 1;
+         if ( $i != 0 ) {
+            print HTSVOICE ",";
+         }
+         print HTSVOICE "${s}-${e}";
+         $file_index += $file_size;
+      }
+      print HTSVOICE "\n";
+   }
+   $type = "lpf";
+   $tmp  = get_stream_name($type);
+   print HTSVOICE "STREAM_WIN[${tmp}]:";
+   $file_size = get_file_size("$voicedir/$win{$type}[0]");
+   $s         = $file_index;
+   $e         = $file_index + $file_size - 1;
+   print HTSVOICE "${s}-${e}";
+   $file_index += $file_size;
+   print HTSVOICE "\n";
+
+   foreach $type (@cmp) {
+      $tmp       = get_stream_name($type);
+      $file_size = get_file_size("${voicedir}/${type}.pdf");
+      $s         = $file_index;
+      $e         = $file_index + $file_size - 1;
+      print HTSVOICE "STREAM_PDF[$tmp]:${s}-${e}\n";
+      $file_index += $file_size;
+   }
+   $type      = "lpf";
+   $tmp       = get_stream_name($type);
+   $file_size = get_file_size("${voicedir}/${type}.pdf");
+   $s         = $file_index;
+   $e         = $file_index + $file_size - 1;
+   print HTSVOICE "STREAM_PDF[$tmp]:${s}-${e}\n";
+   $file_index += $file_size;
+
+   foreach $type (@cmp) {
+      $tmp       = get_stream_name($type);
+      $file_size = get_file_size("${voicedir}/tree-${type}.inf");
+      $s         = $file_index;
+      $e         = $file_index + $file_size - 1;
+      print HTSVOICE "STREAM_TREE[$tmp]:${s}-${e}\n";
+      $file_index += $file_size;
+   }
+   $type      = "lpf";
+   $tmp       = get_stream_name($type);
+   $file_size = get_file_size("${voicedir}/tree-${type}.inf");
+   $s         = $file_index;
+   $e         = $file_index + $file_size - 1;
+   print HTSVOICE "STREAM_TREE[$tmp]:${s}-${e}\n";
+   $file_index += $file_size;
+
+   foreach $type (@cmp) {
+      $tmp = get_stream_name($type);
+      if ($useGV) {
+         $file_size = get_file_size("${voicedir}/gv-${type}.pdf");
+         $s         = $file_index;
+         $e         = $file_index + $file_size - 1;
+         print HTSVOICE "GV_PDF[$tmp]:${s}-${e}\n";
+         $file_index += $file_size;
+      }
+   }
+   foreach $type (@cmp) {
+      $tmp = get_stream_name($type);
+      if ( $useGV && $cdgv ) {
+         $file_size = get_file_size("${voicedir}/tree-gv-${type}.inf");
+         $s         = $file_index;
+         $e         = $file_index + $file_size - 1;
+         print HTSVOICE "GV_TREE[$tmp]:${s}-${e}\n";
+         $file_index += $file_size;
+      }
+   }
+
+   # data information
+   print HTSVOICE "[DATA]\n";
+   open( I, "${voicedir}/dur.pdf" ) || die "Cannot open $!";
+   @STAT = stat(I);
+   read( I, $DATA, $STAT[7] );
+   close(I);
+   print HTSVOICE $DATA;
+   open( I, "${voicedir}/tree-dur.inf" ) || die "Cannot open $!";
+   @STAT = stat(I);
+   read( I, $DATA, $STAT[7] );
+   close(I);
+   print HTSVOICE $DATA;
+
+   foreach $type (@cmp) {
+      $tmp = get_stream_name($type);
+      for ( $i = 0 ; $i < $nwin{$type} ; $i++ ) {
+         open( I, "${voicedir}/$win{$type}[$i]" ) || die "Cannot open $!";
+         @STAT = stat(I);
+         read( I, $DATA, $STAT[7] );
+         close(I);
+         print HTSVOICE $DATA;
+      }
+   }
+   $type = "lpf";
+   $tmp  = get_stream_name($type);
+   open( I, "${voicedir}/$win{$type}[0]" ) || die "Cannot open $!";
+   @STAT = stat(I);
+   read( I, $DATA, $STAT[7] );
+   close(I);
+   print HTSVOICE $DATA;
+
+   foreach $type (@cmp) {
+      $tmp = get_stream_name($type);
+      open( I, "${voicedir}/${type}.pdf" ) || die "Cannot open $!";
+      @STAT = stat(I);
+      read( I, $DATA, $STAT[7] );
+      close(I);
+      print HTSVOICE $DATA;
+   }
+   $type = "lpf";
+   $tmp  = get_stream_name($type);
+   open( I, "${voicedir}/${type}.pdf" ) || die "Cannot open $!";
+   @STAT = stat(I);
+   read( I, $DATA, $STAT[7] );
+   close(I);
+   print HTSVOICE $DATA;
+
+   foreach $type (@cmp) {
+      $tmp = get_stream_name($type);
+      open( I, "${voicedir}/tree-${type}.inf" ) || die "Cannot open $!";
+      @STAT = stat(I);
+      read( I, $DATA, $STAT[7] );
+      close(I);
+      print HTSVOICE $DATA;
+   }
+   $type = "lpf";
+   $tmp  = get_stream_name($type);
+   open( I, "${voicedir}/tree-${type}.inf" ) || die "Cannot open $!";
+   @STAT = stat(I);
+   read( I, $DATA, $STAT[7] );
+   close(I);
+   print HTSVOICE $DATA;
+
+   foreach $type (@cmp) {
+      $tmp = get_stream_name($type);
+      if ($useGV) {
+         open( I, "${voicedir}/gv-${type}.pdf" ) || die "Cannot open $!";
+         @STAT = stat(I);
+         read( I, $DATA, $STAT[7] );
+         close(I);
+         print HTSVOICE $DATA;
+      }
+   }
+   foreach $type (@cmp) {
+      $tmp = get_stream_name($type);
+      if ( $useGV && $cdgv ) {
+         open( I, "${voicedir}/tree-gv-${type}.inf" ) || die "Cannot open $!";
+         @STAT = stat(I);
+         read( I, $DATA, $STAT[7] );
+         close(I);
+         print HTSVOICE $DATA;
+      }
+   }
+   close(HTSVOICE);
+}
+
+# sub routine for getting stream name for HTS voice
+sub get_stream_name($) {
+   my ($from) = @_;
+   my ($to);
+
+   if ( $from eq 'mgc' ) {
+      if ( $gm == 0 ) {
+         $to = "MCP";
+      }
+      else {
+         $to = "LSP";
+      }
+   }
+   else {
+      $to = uc $from;
+   }
+
+   return $to;
+}
+
+# sub routine for getting file size
+sub get_file_size($) {
+   my ($file) = @_;
+   my ($file_size);
+
+   $file_size = `$WC -c < $file`;
+   chomp($file_size);
+
+   return $file_size;
 }
 
 # sub routine for formant emphasis in Mel-cepstral domain
-sub postfiltering($$) {
+sub postfiltering_mcp($$) {
    my ( $base, $gendir ) = @_;
    my ( $i, $line );
 
    # output postfiltering weight coefficient
    $line = "echo 1 1 ";
    for ( $i = 2 ; $i < $ordr{'mgc'} ; $i++ ) {
-      $line .= "$pf ";
+      $line .= "$pf_mcp ";
    }
    $line .= "| $X2X +af > $gendir/weight";
    shell($line);
@@ -1876,6 +2090,66 @@ sub postfiltering($$) {
    shell($line);
 }
 
+# sub routine for formant emphasis in LSP domain
+sub postfiltering_lsp($$) {
+   my ( $base, $gendir ) = @_;
+   my ( $file, $lgopt, $line, $i, @lsp, $d_1, $d_2, $plsp, $data );
+
+   $file = "$gendir/${base}.mgc";
+   $lgopt = "-l" if ($lg);
+
+   $line = "$LSPCHECK -m " . ( $ordr{'mgc'} - 1 ) . " -s " . ( $sr / 1000 ) . " -c -r 0.1 $file | ";
+   $line .= "$LSP2LPC -m " . ( $ordr{'mgc'} - 1 ) . " -s " . ( $sr / 1000 ) . " $lgopt | ";
+   $line .= "$MGC2MGC -m " . ( $ordr{'mgc'} - 1 ) . " -a $fw -c $gm -n -u -M " . ( $fl - 1 ) . " -A 0.0 -G 1.0 | ";
+   $line .= "$SOPR -P | $VSUM -n $fl | $SOPR -LN -m 0.5 > $gendir/${base}.ene1";
+   shell($line);
+
+   # postfiltering
+   open( LSP,  "$X2X +fa < $gendir/${base}.mgc |" );
+   open( GAIN, ">$gendir/${base}.gain" );
+   open( PLSP, ">$gendir/${base}.lsp" );
+   while (1) {
+      @lsp = ();
+      for ( $i = 0 ; $i < $ordr{'mgc'} && ( $line = <LSP> ) ; $i++ ) {
+         push( @lsp, $line );
+      }
+      if ( $ordr{'mgc'} != @lsp ) { last; }
+
+      $data = pack( "f", $lsp[0] );
+      print GAIN $data;
+      for ( $i = 1 ; $i < $ordr{'mgc'} ; $i++ ) {
+         if ( $i > 1 && $i < $ordr{'mgc'} - 1 ) {
+            $d_1 = $pf_lsp * ( $lsp[ $i + 1 ] - $lsp[$i] );
+            $d_2 = $pf_lsp * ( $lsp[$i] - $lsp[ $i - 1 ] );
+            $plsp = $lsp[ $i - 1 ] + $d_2 + ( $d_2 * $d_2 * ( ( $lsp[ $i + 1 ] - $lsp[ $i - 1 ] ) - ( $d_1 + $d_2 ) ) ) / ( ( $d_2 * $d_2 ) + ( $d_1 * $d_1 ) );
+         }
+         else {
+            $plsp = $lsp[$i];
+         }
+         $data = pack( "f", $plsp );
+         print PLSP $data;
+      }
+   }
+   close(PLSP);
+   close(GAIN);
+   close(LSP);
+
+   $line = "$MERGE -s 1 -l 1 -L " . ( $ordr{'mgc'} - 1 ) . " -N " . ( $ordr{'mgc'} - 2 ) . " $gendir/${base}.lsp < $gendir/${base}.gain | ";
+   $line .= "$LSPCHECK -m " . ( $ordr{'mgc'} - 1 ) . " -s " .                     ( $sr / 1000 ) . " -c -r 0.1 | ";
+   $line .= "$LSP2LPC -m " .  ( $ordr{'mgc'} - 1 ) . " -s " .                     ( $sr / 1000 ) . " $lgopt | ";
+   $line .= "$MGC2MGC -m " .  ( $ordr{'mgc'} - 1 ) . " -a $fw -c $gm -n -u -M " . ( $fl - 1 ) . " -A 0.0 -G 1.0 | ";
+   $line .= "$SOPR -P | $VSUM -n $fl | $SOPR -LN -m 0.5 > $gendir/${base}.ene2 ";
+   shell($line);
+
+   $line = "$VOPR -l 1 -d $gendir/${base}.ene2 $gendir/${base}.ene2 | $SOPR -LN -m 0.5 | ";
+   $line .= "$VOPR -a $gendir/${base}.gain | ";
+   $line .= "$MERGE -s 1 -l 1 -L " . ( $ordr{'mgc'} - 1 ) . " -N " . ( $ordr{'mgc'} - 2 ) . " $gendir/${base}.lsp > $gendir/${base}.p_mgc";
+   shell($line);
+
+   $line = "rm -f $gendir/${base}.ene1 $gendir/${base}.ene2 $gendir/${base}.gain $gendir/${base}.lsp";
+   shell($line);
+}
+
 # sub routine for speech synthesis from log f0 and Mel-cepstral coefficients
 sub gen_wave($) {
    my ($gendir) = @_;
@@ -1889,8 +2163,9 @@ sub gen_wave($) {
 
    # synthesize a waveform STRAIGHT
    open( SYN, ">$datdir/scripts/synthesis.m" ) || die "Cannot open $!";
-   printf SYN "path(path,'%s');\n",                   ${STRAIGHT};
-   printf SYN "prm.spectralUpdateInterval = %f;\n\n", 1000.0 * $fs / $sr;
+   printf SYN "path(path,'%s');\n",                 ${STRAIGHT};
+   printf SYN "prm.spectralUpdateInterval = %f;\n", 1000.0 * $fs / $sr;
+   printf SYN "prm.levelNormalizationIndicator = 0;\n\n";
 
    foreach $file (@FILE) {
       $base = `basename $file .mgc`;
@@ -1899,102 +2174,52 @@ sub gen_wave($) {
          print " Converting $base.mgc, $base.lf0, and $base.bap to STRAIGHT params...";
 
          # convert log F0 to pitch
-         $T = lf02f0( $base, $gendir );
+         $line = "$SOPR -magic -1.0E+10 -EXP -MAGIC 0.0 $gendir/${base}.lf0 > $gendir/${base}.f0";
+         shell($line);
+         $T = get_file_size("$gendir/${base}.f0") / 4;
 
-         if ( $gm > 0 ) {
-
-            # MGC-LSPs -> MGC coefficients
-            $line = "$LSPCHECK -m " . ( $ordr{'mgc'} - 1 ) . " -s " . ( $sr / 1000 ) . " -r 0.1 $file | ";
-            $line .= "$LSP2LPC -m " . ( $ordr{'mgc'} - 1 ) . " -s " . ( $sr / 1000 ) . " $lgopt | ";
-            $line .= "$MGC2MGC -m " . ( $ordr{'mgc'} - 1 ) . " -a $fw -c $gm -n -u -M " . ( $ordr{'mgc'} - 1 ) . " -A $fw -C $gm " . " > $gendir/$base.c_mgc";
-            shell($line);
-
-            $mgc = "$gendir/$base.c_mgc";
-         }
-         else {
+         if ( $gm == 0 ) {
 
             # apply postfiltering
-            if ( $gm == 0 && $pf != 1.0 && $useGV == 0 ) {
-               postfiltering( $base, $gendir );
+            if ( !$useGV ) {
+               postfiltering_mcp( $base, $gendir );
                $mgc = "$gendir/$base.p_mgc";
             }
             else {
                $mgc = $file;
             }
-         }
 
-         # convert mgc to spectra
-         if ( $gm > 0 ) {
-            shell( "$MGC2SP -a $fw -c $gm -m " . ( $ordr{'mgc'} - 1 ) . " -l 1024 -o 2 $mgc > $gendir/$base.sp" );
+            shell( "$MGC2SP -a $fw -g $gm -m " . ( $ordr{'mgc'} - 1 ) . " -l 2048 -o 2 $mgc > $gendir/$base.sp" );
          }
          else {
-            shell( "$MGC2SP -a $fw -g $gm -m " . ( $ordr{'mgc'} - 1 ) . " -l 1024 -o 2 $mgc > $gendir/$base.sp" );
+
+            # apply postfiltering
+            if ( !$useGV ) {
+               postfiltering_lsp( $base, $gendir );
+               $file = "$gendir/$base.p_mgc";
+            }
+
+            # MGC-LSPs -> MGC coefficients
+            $line = "$LSPCHECK -m " . ( $ordr{'mgc'} - 1 ) . " -s " . ( $sr / 1000 ) . " -c -r 0.1 $file | ";
+            $line .= "$LSP2LPC -m " . ( $ordr{'mgc'} - 1 ) . " -s " . ( $sr / 1000 ) . " $lgopt | ";
+            $line .= "$MGC2MGC -m " . ( $ordr{'mgc'} - 1 ) . " -a $fw -c $gm -n -u -M " . ( $ordr{'mgc'} - 1 ) . " -A $fw -C $gm " . " > $gendir/$base.c_mgc";
+            shell($line);
+
+            $mgc = "$gendir/$base.c_mgc";
+
+            shell( "$MGC2SP -a $fw -c $gm -m " . ( $ordr{'mgc'} - 1 ) . " -l 2048 -o 2 $mgc > $gendir/$base.sp" );
          }
 
          # convert band-aperiodicity to aperiodicity
          $bap = "$gendir/$base.bap";
+         shell( "$MGC2SP -a $fw -g 0 -m " . ( $ordr{'bap'} - 1 ) . " -l 2048 -o 0 $bap > $gendir/$base.ap" );
 
-         shell("$BCP +f -l 26 -L 1 -s  0 -e  0 -S 0 $bap | ${DFS} -b 1 -1 | ${INTERPOLATE} -p   2 | ${DFS} -a 1 -1 > $gendir/$base.ap01");
-         shell("$BCP +f -l 26 -L 1 -s  1 -e  1 -S 0 $bap | ${DFS} -b 1 -1 | ${INTERPOLATE} -p   3 | ${DFS} -a 1 -1 > $gendir/$base.ap02");
-         shell("$BCP +f -l 26 -L 1 -s  2 -e  2 -S 0 $bap | ${DFS} -b 1 -1 | ${INTERPOLATE} -p   4 | ${DFS} -a 1 -1 > $gendir/$base.ap03");
-         shell("$BCP +f -l 26 -L 1 -s  3 -e  3 -S 0 $bap | ${DFS} -b 1 -1 | ${INTERPOLATE} -p   4 | ${DFS} -a 1 -1 > $gendir/$base.ap04");
-         shell("$BCP +f -l 26 -L 1 -s  4 -e  4 -S 0 $bap | ${DFS} -b 1 -1 | ${INTERPOLATE} -p   4 | ${DFS} -a 1 -1 > $gendir/$base.ap05");
-         shell("$BCP +f -l 26 -L 1 -s  5 -e  5 -S 0 $bap | ${DFS} -b 1 -1 | ${INTERPOLATE} -p   5 | ${DFS} -a 1 -1 > $gendir/$base.ap06");
-         shell("$BCP +f -l 26 -L 1 -s  6 -e  6 -S 0 $bap | ${DFS} -b 1 -1 | ${INTERPOLATE} -p   5 | ${DFS} -a 1 -1 > $gendir/$base.ap07");
-         shell("$BCP +f -l 26 -L 1 -s  7 -e  7 -S 0 $bap | ${DFS} -b 1 -1 | ${INTERPOLATE} -p   6 | ${DFS} -a 1 -1 > $gendir/$base.ap08");
-         shell("$BCP +f -l 26 -L 1 -s  8 -e  8 -S 0 $bap | ${DFS} -b 1 -1 | ${INTERPOLATE} -p   6 | ${DFS} -a 1 -1 > $gendir/$base.ap09");
-         shell("$BCP +f -l 26 -L 1 -s  9 -e  9 -S 0 $bap | ${DFS} -b 1 -1 | ${INTERPOLATE} -p   7 | ${DFS} -a 1 -1 > $gendir/$base.ap10");
-         shell("$BCP +f -l 26 -L 1 -s 10 -e 10 -S 0 $bap | ${DFS} -b 1 -1 | ${INTERPOLATE} -p   8 | ${DFS} -a 1 -1 > $gendir/$base.ap11");
-         shell("$BCP +f -l 26 -L 1 -s 11 -e 11 -S 0 $bap | ${DFS} -b 1 -1 | ${INTERPOLATE} -p   9 | ${DFS} -a 1 -1 > $gendir/$base.ap12");
-         shell("$BCP +f -l 26 -L 1 -s 12 -e 12 -S 0 $bap | ${DFS} -b 1 -1 | ${INTERPOLATE} -p  10 | ${DFS} -a 1 -1 > $gendir/$base.ap13");
-         shell("$BCP +f -l 26 -L 1 -s 13 -e 13 -S 0 $bap | ${DFS} -b 1 -1 | ${INTERPOLATE} -p  12 | ${DFS} -a 1 -1 > $gendir/$base.ap14");
-         shell("$BCP +f -l 26 -L 1 -s 14 -e 14 -S 0 $bap | ${DFS} -b 1 -1 | ${INTERPOLATE} -p  14 | ${DFS} -a 1 -1 > $gendir/$base.ap15");
-         shell("$BCP +f -l 26 -L 1 -s 15 -e 15 -S 0 $bap | ${DFS} -b 1 -1 | ${INTERPOLATE} -p  16 | ${DFS} -a 1 -1 > $gendir/$base.ap16");
-         shell("$BCP +f -l 26 -L 1 -s 16 -e 16 -S 0 $bap | ${DFS} -b 1 -1 | ${INTERPOLATE} -p  19 | ${DFS} -a 1 -1 > $gendir/$base.ap17");
-         shell("$BCP +f -l 26 -L 1 -s 17 -e 17 -S 0 $bap | ${DFS} -b 1 -1 | ${INTERPOLATE} -p  24 | ${DFS} -a 1 -1 > $gendir/$base.ap18");
-         shell("$BCP +f -l 26 -L 1 -s 18 -e 18 -S 0 $bap | ${DFS} -b 1 -1 | ${INTERPOLATE} -p  29 | ${DFS} -a 1 -1 > $gendir/$base.ap19");
-         shell("$BCP +f -l 26 -L 1 -s 19 -e 19 -S 0 $bap | ${DFS} -b 1 -1 | ${INTERPOLATE} -p  37 | ${DFS} -a 1 -1 > $gendir/$base.ap20");
-         shell("$BCP +f -l 26 -L 1 -s 20 -e 20 -S 0 $bap | ${DFS} -b 1 -1 | ${INTERPOLATE} -p  49 | ${DFS} -a 1 -1 > $gendir/$base.ap21");
-         shell("$BCP +f -l 26 -L 1 -s 21 -e 21 -S 0 $bap | ${DFS} -b 1 -1 | ${INTERPOLATE} -p  68 | ${DFS} -a 1 -1 > $gendir/$base.ap22");
-         shell("$BCP +f -l 26 -L 1 -s 22 -e 22 -S 0 $bap | ${DFS} -b 1 -1 | ${INTERPOLATE} -p  99 | ${DFS} -a 1 -1 > $gendir/$base.ap23");
-         shell("$BCP +f -l 26 -L 1 -s 23 -e 23 -S 0 $bap | ${DFS} -b 1 -1 | ${INTERPOLATE} -p 160 | ${DFS} -a 1 -1 > $gendir/$base.ap24");
-         shell("$BCP +f -l 26 -L 1 -s 24 -e 24 -S 0 $bap | ${DFS} -b 1 -1 | ${INTERPOLATE} -p 300 | ${DFS} -a 1 -1 > $gendir/$base.ap25");
-         shell("$BCP +f -l 26 -L 1 -s 25 -e 25 -S 0 $bap | ${DFS} -b 1 -1 | ${INTERPOLATE} -p 125 | ${DFS} -a 1 -1 > $gendir/$base.ap26");
+         printf SYN "fprintf(1,'\\nSynthesizing %s\\n');\n", "$gendir/$base.wav";
+         printf SYN "fid1 = fopen('%s','r','%s');\n",        "$gendir/$base.sp", "ieee-le";
+         printf SYN "fid2 = fopen('%s','r','%s');\n",        "$gendir/$base.ap", "ieee-le";
+         printf SYN "fid3 = fopen('%s','r','%s');\n",        "$gendir/$base.f0", "ieee-le";
 
-         $line = "cat                         $gendir/$base.ap01 | ";
-         $line .= "$MERGE -s   2 -l   2 -L   3 $gendir/$base.ap02 | ";
-         $line .= "$MERGE -s   5 -l   5 -L   4 $gendir/$base.ap03 | ";
-         $line .= "$MERGE -s   9 -l   9 -L   4 $gendir/$base.ap04 | ";
-         $line .= "$MERGE -s  13 -l  13 -L   4 $gendir/$base.ap05 | ";
-         $line .= "$MERGE -s  17 -l  17 -L   5 $gendir/$base.ap06 | ";
-         $line .= "$MERGE -s  22 -l  22 -L   5 $gendir/$base.ap07 | ";
-         $line .= "$MERGE -s  27 -l  27 -L   6 $gendir/$base.ap08 | ";
-         $line .= "$MERGE -s  33 -l  33 -L   6 $gendir/$base.ap09 | ";
-         $line .= "$MERGE -s  39 -l  39 -L   7 $gendir/$base.ap10 | ";
-         $line .= "$MERGE -s  46 -l  46 -L   8 $gendir/$base.ap11 | ";
-         $line .= "$MERGE -s  54 -l  54 -L   9 $gendir/$base.ap12 | ";
-         $line .= "$MERGE -s  63 -l  63 -L  10 $gendir/$base.ap13 | ";
-         $line .= "$MERGE -s  73 -l  73 -L  12 $gendir/$base.ap14 | ";
-         $line .= "$MERGE -s  85 -l  85 -L  14 $gendir/$base.ap15 | ";
-         $line .= "$MERGE -s  99 -l  99 -L  16 $gendir/$base.ap16 | ";
-         $line .= "$MERGE -s 115 -l 115 -L  19 $gendir/$base.ap17 | ";
-         $line .= "$MERGE -s 134 -l 134 -L  24 $gendir/$base.ap18 | ";
-         $line .= "$MERGE -s 158 -l 158 -L  29 $gendir/$base.ap19 | ";
-         $line .= "$MERGE -s 187 -l 187 -L  37 $gendir/$base.ap20 | ";
-         $line .= "$MERGE -s 224 -l 224 -L  49 $gendir/$base.ap21 | ";
-         $line .= "$MERGE -s 273 -l 273 -L  68 $gendir/$base.ap22 | ";
-         $line .= "$MERGE -s 341 -l 341 -L  99 $gendir/$base.ap23 | ";
-         $line .= "$MERGE -s 440 -l 440 -L 160 $gendir/$base.ap24 | ";
-         $line .= "$MERGE -s 600 -l 600 -L 300 $gendir/$base.ap25 | ";
-         $line .= "$MERGE -s 900 -l 900 -L 125 $gendir/$base.ap26 > $gendir/$base.ap";
-         shell($line);
-
-         printf SYN "fprintf(1,'Synthesizing %s');\n", "$gendir/$base.wav";
-         printf SYN "fid1 = fopen('%s','r','%s');\n",  "$gendir/$base.sp", "ieee-le";
-         printf SYN "fid2 = fopen('%s','r','%s');\n",  "$gendir/$base.ap", "ieee-le";
-         printf SYN "fid3 = fopen('%s','r','%s');\n",  "$gendir/$base.f0", "ieee-le";
-
-         printf SYN "sp = fread(fid1,[%d, %d],'float');\n", 513,  $T;
+         printf SYN "sp = fread(fid1,[%d, %d],'float');\n", 1025, $T;
          printf SYN "ap = fread(fid2,[%d, %d],'float');\n", 1025, $T;
          printf SYN "f0 = fread(fid3,[%d, %d],'float');\n", 1,    $T;
 
@@ -2002,8 +2227,9 @@ sub gen_wave($) {
          print SYN "fclose(fid2);\n";
          print SYN "fclose(fid3);\n";
 
+         printf SYN "sp = sp*(" . ( 1024.0 / ( 2200.0 * 32768.0 ) ) . ");\n";    # normalization for STRAIGHT (sdev of amplitude is set to 1024)
          printf SYN "[sy] = exstraightsynth(f0,sp,ap,%d,prm);\n", $sr;
-         printf SYN "wavwrite( sy/max(abs(sy)), %d, '%s');\n\n", $sr, "$gendir/$base.wav";
+         printf SYN "wavwrite( sy, %d, '%s');\n\n", $sr, "$gendir/$base.wav";
 
          print "done\n";
       }

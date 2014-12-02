@@ -2,7 +2,7 @@
 * Installation of HTS-demo_CMU-ARCTIC-SLT_STRAIGHT
 ===================================================
 
-1. HTS-demo_CMU-ARCTIC-SLT_STRAIGHT requires Festival, SPTK-3.4.1, HTS-2.2, hts_engine API-1.05, STRAIGHTV40, and MATLAB.
+1. HTS-demo_CMU-ARCTIC-SLT_STRAIGHT requires Festival, SPTK-3.6, HTS-2.3 alpha, hts_engine API-1.07, STRAIGHTV40, and MATLAB.
    Please install them before running this demo.
    You can download part of them from the following websites:
 
@@ -19,9 +19,9 @@
    % ./configure --with-matlab-search-path=/usr/local/matlab/bin \
                  --with-straight-path=/usr/local/STRAIGHTV40 \
                  --with-fest-search-path=/usr/local/festival/examples \
-                 --with-sptk-search-path=/usr/local/SPTK-3.4.1/bin \
-                 --with-hts-search-path=/usr/local/HTS-2.2_for_HTK-3.4.1/bin \
-                 --with-hts-engine-search-path=/usr/local/hts_engine_API-1.05/bin
+                 --with-sptk-search-path=/usr/local/SPTK-3.6/bin \
+                 --with-hts-search-path=/usr/local/HTS-2.3alpha_for_HTK-3.4.1/bin \
+                 --with-hts-engine-search-path=/usr/local/hts_engine_API-1.07/bin
 
    Please adjust the above directories for your environment.
    Note that you should specify festival/examples rather than festival/bin.
