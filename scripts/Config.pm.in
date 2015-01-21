@@ -5,7 +5,7 @@
 #           http://hts.sp.nitech.ac.jp/                             #
 # ----------------------------------------------------------------- #
 #                                                                   #
-#  Copyright (c) 2001-2012  Nagoya Institute of Technology          #
+#  Copyright (c) 2001-2014  Nagoya Institute of Technology          #
 #                           Department of Computer Science          #
 #                                                                   #
 #                2001-2008  Tokyo Institute of Technology           #
@@ -45,15 +45,20 @@
 
 
 # Settings ==============================
-$fclf = '@FULLCONTEXT_FORMAT@';
-$fclv = '@FULLCONTEXT_VERSION@';
-$dset = '@DATASET@';
-$spkr = '@SPEAKER@';
-$qnum = '@QNUM@';
-$ver  = '@VER@';
+$fclf        = '@FULLCONTEXT_FORMAT@';
+$fclv        = '@FULLCONTEXT_VERSION@';
+$dset        = '@DATASET@';
+$spkr        = '@SPEAKER@';
+$qnum        = '@QNUM@';
+$ver         = '@VER@';
+$usestraight = '@USESTRAIGHT@';
 
 @SET        = ('cmp','dur');
-@cmp        = ('mgc','lf0','bap');
+if(!$usestraight){
+   @cmp     = ('mgc','lf0');
+}else{
+   @cmp     = ('mgc','lf0','bap');
+}
 @dur        = ('dur');
 $ref{'cmp'} = \@cmp;
 $ref{'dur'} = \@dur;
@@ -88,13 +93,13 @@ $ref{'dur'} = \@dur;
          'bap' => 'cmp',
          'dur' => 'dur');
 
-%strb = ('mgc' => '1',              # stream start
-         'lf0' => '2',
-         'bap' => '@BAPSTREN@',
+%strb = ('mgc' => '@MGCSTRST@',     # stream start
+         'lf0' => '@LF0STRST@',
+         'bap' => '@BAPSTRST@',
          'dur' => '1');
 
-%stre = ('mgc' => '1',              # stream end
-         'lf0' => '@F0STREN@',
+%stre = ('mgc' => '@MGCSTREN@',     # stream end
+         'lf0' => '@LF0STREN@',
          'bap' => '@BAPSTREN@',
          'dur' => '@NSTATE@');
 
@@ -139,6 +144,8 @@ $ref{'dur'} = \@dur;
 %gvgam  = ('mgc' => '000',          # stats load threshold for GV
            'lf0' => '000',
            'bap' => '000');
+
+%mspfe  = ('mgc' => '1.0');         # emphasis coefficient of modulation spectrum-based postfilter
 
 @slnt = ('pau','h#','brth');        # silent and pause phoneme
 
@@ -195,6 +202,9 @@ $gvWeight   = @GVWEIGHT@;   # weight for GV output prob.
 $optKind    = '@OPTKIND@';  # optimization method (STEEPEST, NEWTON, or LBFGS)
 $nosilgv    = @NOSILGV@;    # GV without silent and pause phoneme
 $cdgv       = @CDGV@;       # context-dependent GV
+$useMSPF    = @USEMSPF@;    # use modulation spectrum-based postfilter
+$mspfLength = 25;           # frame length of modulation spectrum-based postfilter (odd number)
+$mspfFFTLen = 64;           # FFT length of modulation spectrum-based postfilter (even number)
 
 
 # Directories & Commands ===============
@@ -206,9 +216,6 @@ $PERL = '@PERL@';
 
 # wc
 $WC = '@WC@';
-
-# tee
-$TEE = '@TEE@';
 
 # HTS commands
 $HCOMPV    = '@HCOMPV@';
@@ -222,24 +229,34 @@ $HMGENS    = '@HMGENS@';
 $ENGINE    = '@ENGINE@';
 
 # SPTK commands
-$X2X      = '@X2X@';
-$FREQT    = '@FREQT@';
-$C2ACR    = '@C2ACR@';
-$VOPR     = '@VOPR@';
-$VSUM     = '@VSUM@';
-$MC2B     = '@MC2B@';
-$SOPR     = '@SOPR@';
-$B2MC     = '@B2MC@';
-$LSP2LPC  = '@LSP2LPC@';
-$MGC2MGC  = '@MGC2MGC@';
-$MERGE    = '@MERGE@';
-$BCP      = '@BCP@';
-$LSPCHECK = '@LSPCHECK@';
-$MGC2SP   = '@MGC2SP@';
-$BCUT     = '@BCUT@';
-$VSTAT    = '@VSTAT@';
-$NAN      = '@NAN@';
-$RAW2WAV  = '@RAW2WAV@';
+$X2X          = '@X2X@';
+$FREQT        = '@FREQT@';
+$C2ACR        = '@C2ACR@';
+$VOPR         = '@VOPR@';
+$VSUM         = '@VSUM@';
+$MC2B         = '@MC2B@';
+$SOPR         = '@SOPR@';
+$B2MC         = '@B2MC@';
+$EXCITE       = '@EXCITE@';
+$LSP2LPC      = '@LSP2LPC@';
+$MGC2MGC      = '@MGC2MGC@';
+$MGLSADF      = '@MGLSADF@';
+$MERGE        = '@MERGE@';
+$BCP          = '@BCP@';
+$LSPCHECK     = '@LSPCHECK@';
+$MGC2SP       = '@MGC2SP@';
+$BCUT         = '@BCUT@';
+$VSTAT        = '@VSTAT@';
+$NAN          = '@NAN@';
+$DFS          = '@DFS@';
+$SWAB         = '@SWAB@';
+$RAW2WAV      = '@RAW2WAV@';
+$FRAME        = '@FRAME@';
+$WINDOW       = '@WINDOW@';
+$SPEC         = '@SPEC@';
+$TRANSPOSE    = '@TRANSPOSE@';
+$PHASE        = '@PHASE@';
+$IFFTR        = '@IFFTR@';
 
 # MATLAB & STRAIGHT
 $MATLAB   = '@MATLAB@';
@@ -263,11 +280,12 @@ $ERST4 = 1; # embedded reestimation (re-clustered)
 $FALGN = 1; # forced alignment for no-silent GV
 $MCDGV = 1; # making global variance
 $MKUNG = 1; # making unseen models (GV)
+$TMSPF = 1; # training modulation spectrum-based postfilter
 $MKUN1 = 1; # making unseen models (1mix)
 $PGEN1 = 1; # generating speech parameter sequences (1mix)
 $WGEN1 = 1; # synthesizing waveforms (1mix)
-$CONVM = 0; # converting mmfs to the hts_engine file format
-$ENGIN = 0; # synthesizing waveforms using hts_engine
+$CONVM = 1; # converting mmfs to the hts_engine file format
+$ENGIN = 1; # synthesizing waveforms using hts_engine
 $SEMIT = 1; # semi-tied covariance matrices
 $MKUNS = 1; # making unseen models (stc)
 $PGENS = 1; # generating speech parameter sequences (stc)
